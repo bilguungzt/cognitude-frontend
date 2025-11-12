@@ -33,9 +33,11 @@ import type {
   ValidationTimelineEvent,
   RetryAttemptsData,
   DashboardSummaryStats,
+ AutopilotDashboardData,
+ EnhancedDashboardData,
 } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5175';
 
 class CognitudeAPI {
   private client: AxiosInstance;
@@ -175,6 +177,10 @@ class CognitudeAPI {
     return response.data;
   }
 
+  async getUsageAnalytics(start_date: string, end_date: string): Promise<any> {
+    return this.getUsageStats({ start_date, end_date });
+  }
+
   // ==================== Cache Management ====================
 
   async getCacheStats(): Promise<CacheStats> {
@@ -269,6 +275,15 @@ class CognitudeAPI {
     return response.data;
   }
 
+  async getCurrentDrift(modelId: number): Promise<any> {
+    return {};
+  }
+
+  async getDriftHistory(modelId: number): Promise<any[]> {
+    return [];
+  }
+
+
   // ==================== Schema Enforcement ====================
 
   async getActiveSchemas(): Promise<SchemaStat[]> {
@@ -346,6 +361,15 @@ class CognitudeAPI {
     return response.data;
   }
 
+  async getAutopilotDashboardData(): Promise<AutopilotDashboardData> {
+    const response = await this.client.get('/autopilot/dashboard');
+    return response.data;
+  }
+
+  async getEnhancedDashboardData(): Promise<EnhancedDashboardData> {
+    const response = await this.client.get<EnhancedDashboardData>('/api/v1/dashboard/enhanced');
+    return response.data;
+  }
   // ==================== Response Validator ====================
 
   async getValidationStats(): Promise<ValidationStats> {

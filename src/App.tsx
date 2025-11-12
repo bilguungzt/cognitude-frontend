@@ -33,10 +33,42 @@ function App() {
                 }
               />
               <Route
+                path="/autopilot"
+                element={
+                  <ProtectedRoute>
+                    <AutopilotPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/providers"
                 element={
                   <ProtectedRoute>
                     <ProvidersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cost"
+                element={
+                  <ProtectedRoute>
+                    <CostDashboardEnhanced />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/validator"
+                element={
+                  <ProtectedRoute>
+                    <ResponseValidatorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemas"
+                element={
+                  <ProtectedRoute>
+                    <SchemaEnforcementPage />
                   </ProtectedRoute>
                 }
               />
@@ -64,22 +96,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/autopilot"
-                element={
-                  <ProtectedRoute>
-                    <AutopilotPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/cost"
-                element={
-                  <ProtectedRoute>
-                    <CostDashboardEnhanced />
-                  </ProtectedRoute>
-                }
-              />
+
               <Route
                 path="/setup"
                 element={
@@ -96,22 +113,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/validator"
-                element={
-                  <ProtectedRoute>
-                    <ResponseValidatorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/schemas"
-                element={
-                  <ProtectedRoute>
-                    <SchemaEnforcementPage />
-                  </ProtectedRoute>
-                }
-              />
+
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>

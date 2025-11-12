@@ -1,43 +1,177 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
-import Sidebar from "./Sidebar";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Database,
+  Zap,
+  DollarSign,
+  AlertCircle,
+  Gauge,
+  Rocket,
+  Shield,
+  FileText,
+  Book,
+  Settings,
+  Moon,
+  Sun,
+  LogOut,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 interface LayoutProps {
   children: ReactNode;
   title?: string;
 }
 
+const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Providers", href: "/providers", icon: Database },
+  { name: "Cache", href: "/cache", icon: Zap },
+  { name: "Cost Analytics", href: "/cost-analytics", icon: DollarSign },
+  { name: "Alerts", href: "/alerts", icon: AlertCircle },
+  { name: "Rate Limits", href: "/rate-limits", icon: Gauge },
+  { name: "Autopilot", href: "/autopilot", icon: Rocket },
+  { name: "Validator", href: "/validator", icon: Shield },
+  { name: "Schemas", href: "/schemas", icon: FileText },
+  { name: "API Docs", href: "/docs", icon: Book },
+];
+
 export default function Layout({ children, title }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-pattern flex">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <Sidebar isOpen={sidebarOpen} />
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Sidebar - Desktop */}
+      <aside
+        className={`hidden lg:flex lg:flex-col fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
+          sidebarOpen ? "w-64" : "w-0"
+        } overflow-hidden`}
+      >
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Logo */}
+          <div className="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Cognitude
+            </h1>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Bottom Actions */}
+          <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-1">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              {darkMode ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
+              <span>Dark Mode</span>
+            </button>
+            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <LogOut className="w-5 h-5" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </aside>
 
       {/* Mobile Sidebar */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:hidden">
+            <div className="flex-1 flex flex-col min-h-0 h-full">
+              {/* Logo */}
+              <div className="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Cognitude
+                </h1>
+              </div>
+
+              {/* Navigation */}
+              <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Bottom Actions */}
+              <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-1">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  {darkMode ? (
+                    <Sun className="w-5 h-5" />
+                  ) : (
+                    <Moon className="w-5 h-5" />
+                  )}
+                  <span>Dark Mode</span>
+                </button>
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <LogOut className="w-5 h-5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* Main Content Area */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden ${
-          mobileMenuOpen ? "block" : "hidden"
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          sidebarOpen ? "lg:ml-64" : "lg:ml-0"
         }`}
       >
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-        <div className="relative w-64">
-          <Sidebar isOpen={true} />
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col w-0">
         {/* Header */}
-        <header className="glass sticky top-0 z-40 border-b border-gray-200/50 shadow-sm dark:border-gray-700/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
@@ -71,7 +205,7 @@ export default function Layout({ children, title }: LayoutProps) {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           {children}
         </main>
       </div>

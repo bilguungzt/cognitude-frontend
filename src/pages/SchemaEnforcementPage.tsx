@@ -7,6 +7,7 @@ import { UploadSchemaModal } from '../components/UploadSchemaModal';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import RetryAttemptsChart from '../components/Validator/RetryAttemptsChart';
 
 interface StatCardProps {
   title: string;
@@ -116,51 +117,62 @@ const SchemaEnforcementPage: React.FC = () => {
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Schemas</h3>
             {schemas.length > 0 ? (
-                <ul className="space-y-2">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schema Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Attempts</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Failure Rate</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Retries</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
                   {schemas.map((schema) => (
-                    <li key={schema.schema_name} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                      <span className="font-medium text-gray-800">{schema.schema_name}</span>
-                      <div className="text-right">
-                        <div className="text-green-600">Success: {(schema.failure_rate * 100).toFixed(1)}%</div>
-                        <div className="text-sm text-red-600">Failures: {Math.round(schema.total_attempts * (1 - schema.failure_rate))}</div>
-                      </div>
-                    </li>
+                    <tr key={schema.schema_name}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{schema.schema_name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{schema.total_attempts}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(schema.failure_rate * 100).toFixed(1)}%</td>
+                      <td className="px-6 py-4 whitespace-now-rap text-sm text-gray-500">{schema.avg_retries.toFixed(2)}</td>
+                    </tr>
                   ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No active schemas found.</p>
-              )}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-gray-500">No active schemas found.</p>
+            )}
           </div>
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Retry Attempts</h3>
-            <div className="h-64 w-full bg-gray-100 rounded-md flex items-center justify-center">
-                <p className="text-gray-500">Retry Attempts Chart Coming Soon</p>
-            </div>
+            {schemas.length > 0 ? (
+              <RetryAttemptsChart data={schemas.reduce((acc, schema) => ({ ...acc, [schema.schema_name]: schema.avg_retries }), {})} />
+            ) : (
+              <p className="text-sm text-gray-500">No retry data available.</p>
+            )}
           </div>
         </div>
 
         <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Failed Validation Logs</h3>
-            <div className="h-96 overflow-y-auto border rounded-md">
-              {logs.length > 0 ? (
-                logs.map((log) => (
-                  <div key={log.id} className="flex items-start p-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer">
-                    <XCircle className="h-5 w-5 text-red-500 mr-3 mt-1 flex-shrink-0" />
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-gray-800">{log.request_id}</span>
-                        <span className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{log.error_details}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-500">No failed validation logs in the last 24 hours.</p>
-                </div>
-              )}
-            </div>
+            {logs.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {logs.map((log) => (
+                    <tr key={log.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.request_id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">{log.error_details}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-gray-500">No failed validation logs in the last 24 hours.</p>
+            )}
         </div>
       </div>
       <UploadSchemaModal

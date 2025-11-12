@@ -10,6 +10,8 @@ import type {
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import IssueChart from '../components/Validator/IssueChart';
+import AutofixChart from '../components/Validator/AutofixChart';
 
 interface StatCardProps {
   title: string;
@@ -117,36 +119,18 @@ const ResponseValidatorPage: React.FC = () => {
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Issues Detected</h3>
             {issueBreakdown && Object.keys(issueBreakdown).length > 0 ? (
-                <ul className="space-y-2">
-                  {Object.entries(issueBreakdown).map(([key, value]) => (
-                    <li key={key} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">{key}</span>
-                      <span className="font-medium text-gray-900">{value}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No issues detected in the selected period.</p>
-              )}
+              <IssueChart data={issueBreakdown} />
+            ) : (
+              <p className="text-sm text-gray-500">No issues detected in the selected period.</p>
+            )}
           </div>
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Auto-fix Retry Statistics</h3>
             {autofixStats ? (
-                <ul className="space-y-2">
-                  <li className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Average Retries</span>
-                    <span className="font-medium text-gray-900">{autofixStats.average_retries.toFixed(2)}</span>
-                  </li>
-                  {Object.entries(autofixStats.retries).map(([key, value]) => (
-                    <li key={key} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">{key} Retries</span>
-                      <span className="font-medium text-gray-900">{value}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No auto-fix data available.</p>
-              )}
+              <AutofixChart data={autofixStats} />
+            ) : (
+              <p className="text-sm text-gray-500">No auto-fix data available.</p>
+            )}
           </div>
         </div>
 

@@ -305,6 +305,37 @@ export interface AutopilotCostComparison {
   actually_spent: number;
   savings: number;
 }
+export interface AutopilotDashboardData {
+  heroStats: {
+    couldHaveSpent: number;
+    actuallySpent: number;
+    savings: number;
+  };
+  keyMetrics: {
+    title: string;
+    value: string;
+    comparison: string;
+  }[];
+  classificationBreakdown: {
+    labels: string[];
+    datasets: {
+      data: number[];
+      backgroundColor: string[];
+    }[];
+  };
+  modelRouting: {
+    nodes: { id: string }[];
+    links: { source: string; target: string; value: number }[];
+  };
+  logs: {
+    timestamp: string;
+    original_model: string;
+    selected_model: string;
+    reason: string;
+    cost_saved: number;
+    speed_improvement: number;
+  }[];
+}
 
 // ==================== Response Validator Types ====================
 
@@ -341,6 +372,56 @@ export interface DashboardSummaryStats {
   validationFailuresLast24h: number;
   activeSchemas: number;
 }
+
+// ==================== Enhanced Dashboard ====================
+
+export interface EnhancedDashboardData {
+  heroStats: {
+    couldHaveSpent: number;
+    actuallySpent: number;
+    totalSavings: number;
+    projectedMonthlySavings: number;
+  };
+  keyMetrics: {
+    title: string;
+    value: string;
+    trend: string;
+    sparklineData: number[];
+    color: "green" | "blue" | "red";
+  }[];
+  bestOptimization: {
+    originalModel: string;
+    selectedModel: string;
+    savingsPerRequest: number;
+    totalImpact: number;
+    requestCount: number;
+  };
+  activityFeed: {
+    id: string;
+    timestamp: string;
+    type: string;
+    description: string;
+  }[];
+  savingsOverTime: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      backgroundColor: string;
+      fill: boolean;
+    }[];
+  };
+  cacheVsFresh: {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      backgroundColor: string;
+    }[];
+  };
+}
+
 
 // ==================== Error Types ====================
 

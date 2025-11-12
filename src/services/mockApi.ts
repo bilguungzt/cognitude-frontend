@@ -22,7 +22,6 @@ import type {
 import {
   dashboardSummaryStatistics,
   autopilotDecisionLogs,
-  validationLogs,
   schemaConfigurations,
 } from "../lib/mockData";
 
@@ -61,7 +60,35 @@ class MockCognitudeAPI {
 
   // Providers
   async getProviders(): Promise<Provider[]> {
-    return [];
+    return [
+      {
+        id: 1,
+        organization_id: 1,
+        provider: "openai",
+        api_key: "sk-...",
+        priority: 1,
+        enabled: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        organization_id: 1,
+        provider: "anthropic",
+        api_key: "sk-...",
+        priority: 2,
+        enabled: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        organization_id: 1,
+        provider: "mistral",
+        api_key: "sk-...",
+        priority: 3,
+        enabled: false,
+        created_at: new Date().toISOString(),
+      },
+    ];
   }
 
   async getProvider(providerId: number): Promise<Provider> {
@@ -141,14 +168,27 @@ class MockCognitudeAPI {
 
   // Analytics
   async getUsageStats(_params?: Record<string, string>): Promise<UsageStats> {
+    const daily_usage = Array.from({ length: 7 }).map((_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      return {
+        date: date.toISOString().split('T')[0],
+        requests: Math.floor(Math.random() * 1000) + 500,
+        cost: Math.random() * 20 + 10,
+      };
+    });
+
     return {
       total_requests: 12345,
       total_cost: 123.45,
       cache_hits: 1234,
       cache_hit_rate: 0.1,
       cost_savings: 12.34,
-      breakdown: [],
-      daily_usage: [],
+      breakdown: [
+        { model: 'gpt-4', requests: 5000, cost: 80.25, tokens: 500000 },
+        { model: 'gpt-3.5-turbo', requests: 7345, cost: 43.20, tokens: 734500 },
+      ],
+      daily_usage: daily_usage.reverse(),
     };
   }
 
@@ -301,7 +341,7 @@ class MockCognitudeAPI {
   }
 
   async getValidationLogs() {
-    return validationLogs;
+    return [];
   }
 
   async getSchemaConfigurations() {
@@ -318,41 +358,362 @@ class MockCognitudeAPI {
   }
 
   async getActiveSchemas() {
-    return [];
+    return [
+      {
+        schema_name: 'user_profile',
+        total_attempts: 1250,
+        failure_rate: 0.05,
+        avg_retries: 0.1,
+      },
+      {
+        schema_name: 'product_catalog',
+        total_attempts: 800,
+        failure_rate: 0.12,
+        avg_retries: 0.25,
+      },
+      {
+        schema_name: 'order_details',
+        total_attempts: 2500,
+        failure_rate: 0.02,
+        avg_retries: 0.05,
+      },
+    ];
   }
 
   async getFailedValidationLogs() {
-    return [];
+    return [
+      {
+        id: 1,
+        request_id: 'req_123',
+        timestamp: new Date().toISOString(),
+        status: 'failure' as "success" | "failure",
+        request_summary: 'Product catalog request',
+        response_summary: 'Invalid JSON format',
+        error_type: 'Invalid JSON',
+        retries: 2,
+        schema_name: 'product_catalog',
+      },
+    ];
   }
 
   async getValidationStats() {
     return {
-      success_rate: 0,
-      failure_rate: 0,
-      autofix_success_rate: 0,
+      success_rate: 98.2,
+      failure_rate: 1.8,
+      autofix_success_rate: 76.5,
     };
   }
 
   async getIssueBreakdown() {
     return {
-      "Invalid JSON": 0,
-      "Schema Mismatch": 0,
+      "Invalid JSON": 12,
+      "Schema Mismatch": 5,
+      "Missing Fields": 3,
     };
   }
 
   async getAutofixStats(): Promise<AutofixStats> {
     return {
       retries: {
-        "0": 100,
-        "1": 20,
+        "0": 85,
+        "1": 10,
         "2": 5,
       },
-      average_retries: 0.3,
+      average_retries: 0.25,
     };
   }
 
   async getValidationTimeline() {
+    return [
+      {
+        id: '1',
+        timestamp: new Date().toISOString(),
+        status: 'success' as 'success' | 'failure',
+        request_summary: 'User profile update',
+        response_summary: 'OK',
+        error_type: null,
+      },
+      {
+        id: '2',
+        timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+        status: 'failure' as 'success' | 'failure',
+        request_summary: 'Product catalog request',
+        response_summary: 'Invalid JSON format',
+        error_type: 'Invalid JSON',
+      },
+      {
+        id: '3',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        status: 'success' as 'success' | 'failure',
+        request_summary: 'Login attempt',
+        response_summary: 'OK',
+        error_type: null,
+      },
+    ];
+  }
+
+  async getAutopilotClassificationBreakdown() {
+    return {
+      'classification': 50,
+      'summarization': 25,
+      'translation': 15,
+      'generation': 10,
+    };
+  }
+
+  async getAutopilotModelRouting() {
+    return {
+      'gpt-4': 20,
+      'gpt-3.5-turbo': 60,
+      'claude-2': 15,
+      'gemini-pro': 5,
+    };
+  }
+
+  async getAutopilotSavings() {
+    return {
+      cost_savings: 123.45,
+      cache_hit_rate: 0.67,
+    };
+  }
+
+  async getAutopilotLogs() {
+    return [
+      {
+        timestamp: new Date().toISOString(),
+        original_model: 'gpt-4',
+        selected_model: 'gpt-3.5-turbo',
+        reason: 'Cost optimization',
+      },
+      {
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        original_model: 'gpt-4',
+        selected_model: 'gpt-4',
+        reason: 'High complexity',
+      },
+      {
+        timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+        original_model: 'claude-2',
+        selected_model: 'gpt-3.5-turbo',
+        reason: 'Cache hit',
+      },
+    ];
+  }
+
+  async getModel() {
+    return null;
+  }
+
+  async getCurrentDrift() {
+    return {};
+  }
+
+  async getDriftHistory() {
     return [];
+  }
+
+  async getModels() {
+    return [];
+  }
+
+  async getUsageAnalytics() {
+    return this.getUsageStats();
+  }
+
+  async getEnhancedDashboardData() {
+    const generateSparkline = () => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100));
+
+    return {
+      heroStats: {
+        couldHaveSpent: 18750.75,
+        actuallySpent: 14230.50,
+        totalSavings: 4520.25,
+        projectedMonthlySavings: 6100.0,
+      },
+      keyMetrics: [
+        {
+          title: "Total Savings",
+          value: "$4,520.25",
+          trend: "+15.2%",
+          sparklineData: generateSparkline(),
+          color: "green" as "green" | "blue" | "red",
+        },
+        {
+          title: "Avg. Latency",
+          value: "320ms",
+          trend: "-8.5%",
+          sparklineData: generateSparkline().reverse(),
+          color: "green" as "green" | "blue" | "red",
+        },
+        {
+          title: "Cache Hit Rate",
+          value: "42.7%",
+          trend: "+3.1%",
+          sparklineData: generateSparkline(),
+          color: "blue" as "green" | "blue" | "red",
+        },
+        {
+          title: "Error Rate",
+          value: "1.2%",
+          trend: "+0.5%",
+          sparklineData: generateSparkline(),
+          color: "red" as "green" | "blue" | "red",
+        },
+      ],
+      bestOptimization: {
+        originalModel: "GPT-4",
+        selectedModel: "GPT-3.5 Turbo",
+        savingsPerRequest: 0.04,
+        totalImpact: 1230.45,
+        requestCount: 380,
+      },
+      activityFeed: [
+        {
+          id: "evt_1",
+          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+          type: "model_reroute",
+          description: "Rerouted 50 requests from `gpt-4` to `gpt-3.5-turbo` saving an estimated $5.20.",
+        },
+        {
+          id: "evt_2",
+          timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+          type: "cache_hit",
+          description: "Served 120 requests from cache, avoiding fresh computation costs.",
+        },
+        {
+          id: "evt_3",
+          timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+          type: "schema_autofix",
+          description: "Auto-fixed 15 responses for `UserProfile` schema.",
+        },
+        {
+          id: "evt_4",
+          timestamp: new Date(Date.now() - 1000 * 60 * 62).toISOString(),
+          type: "alert_triggered",
+          description: "Daily cost threshold alert of $500 was triggered.",
+        },
+      ],
+      savingsOverTime: {
+        labels: Array.from({ length: 30 }, (_, i) => `Day ${i + 1}`),
+        datasets: [
+          {
+            label: "Cumulative Savings",
+            data: Array.from({ length: 30 }, (_, i) => (i + 1) * 150 + Math.random() * 100),
+            borderColor: "#10B981",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            fill: true,
+          },
+        ],
+      },
+      cacheVsFresh: {
+        labels: Array.from({ length: 12 }, (_, i) => new Date(2023, i, 1).toLocaleString('default', { month: 'short' })),
+        datasets: [
+          {
+            label: "Cached Responses",
+            data: [1200, 1500, 1800, 2200, 2500, 2800, 3100, 3400, 3700, 4000, 4300, 4600],
+            backgroundColor: "#4F46E5",
+          },
+          {
+            label: "Fresh Computations",
+            data: [3000, 2800, 2600, 2400, 2200, 2000, 1800, 1600, 1400, 1200, 1000, 800],
+            backgroundColor: "#A5B4FC",
+          },
+        ],
+      },
+    };
+  }
+
+  async getAutopilotDashboardData() {
+    return {
+      heroStats: {
+        couldHaveSpent: 1250.75,
+        actuallySpent: 875.50,
+        savings: 375.25,
+      },
+      keyMetrics: [
+        {
+          title: "Optimization Rate",
+          value: "70%",
+          comparison: "+5% vs last week",
+        },
+        {
+          title: "Avg. Response Time",
+          value: "450ms",
+          comparison: "-50ms vs last week",
+        },
+        {
+          title: "Total Requests",
+          value: "1,234,567",
+          comparison: "+10% vs last week",
+        },
+      ],
+      classificationBreakdown: {
+        labels: ["Classification", "Summarization", "Translation", "Generation", "Other"],
+        datasets: [
+          {
+            data: [45, 25, 15, 10, 5],
+            backgroundColor: [
+              "#4F46E5",
+              "#10B981",
+              "#F59E0B",
+              "#EF4444",
+              "#6B7280",
+            ],
+          },
+        ],
+      },
+      modelRouting: {
+        nodes: [
+          { id: "User Request" },
+          { id: "Autopilot" },
+          { id: "GPT-4" },
+          { id: "GPT-3.5-Turbo" },
+          { id: "Claude 3 Sonnet" },
+          { id: "Gemini Pro" },
+        ],
+        links: [
+          { source: "User Request", target: "Autopilot", value: 100 },
+          { source: "Autopilot", target: "GPT-4", value: 20 },
+          { source: "Autopilot", target: "GPT-3.5-Turbo", value: 55 },
+          { source: "Autopilot", target: "Claude 3 Sonnet", value: 15 },
+          { source: "Autopilot", target: "Gemini Pro", value: 10 },
+        ],
+      },
+      logs: [
+        {
+          timestamp: new Date().toISOString(),
+          original_model: 'gpt-4',
+          selected_model: 'gpt-3.5-turbo',
+          reason: 'Cost optimization for simple query',
+          cost_saved: 0.0015,
+          speed_improvement: 250,
+        },
+        {
+          timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+          original_model: 'gpt-4',
+          selected_model: 'gpt-4',
+          reason: 'High complexity detected',
+          cost_saved: 0,
+          speed_improvement: 0,
+        },
+        {
+          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+          original_model: 'claude-3-opus',
+          selected_model: 'claude-3-sonnet',
+          reason: 'Latency requirement met by smaller model',
+          cost_saved: 0.002,
+          speed_improvement: 400,
+        },
+        {
+          timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+          original_model: 'gemini-pro',
+          selected_model: 'gpt-3.5-turbo',
+          reason: 'Provider API latency spike',
+          cost_saved: 0.0005,
+          speed_improvement: 150,
+        },
+      ],
+    };
   }
 
   // Error helper

@@ -13,7 +13,6 @@ import {
 import { Calendar, TrendingUp, Activity, DollarSign } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Footer from "../components/Footer";
 
 interface DailyUsage {
   date: string;
@@ -66,6 +65,7 @@ export default function CostDashboard() {
     try {
       setError("");
       const data = await api.getUsageAnalytics(dateRange.start, dateRange.end);
+      console.log('Fetched analytics data:', data);
       setAnalyticsData(data);
     } catch (err) {
       setError("Failed to load analytics data");
@@ -101,6 +101,7 @@ export default function CostDashboard() {
     setDateRange((prev) => ({ ...prev, [key]: value }));
   };
 
+  console.log('Rendering with analyticsData:', analyticsData);
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
       {/* Header */}
@@ -252,8 +253,17 @@ export default function CostDashboard() {
                 Daily Spend
               </h3>
               {analyticsData.usage_by_day.length > 0 ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div
+                  className="h-96 w-full"
+                  ref={(el) =>
+                    console.log(
+                      'Chart container dimensions:',
+                      el?.clientWidth,
+                      el?.clientHeight
+                    )
+                  }
+                >
+                  <ResponsiveContainer>
                     <LineChart
                       data={analyticsData.usage_by_day}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -351,8 +361,6 @@ export default function CostDashboard() {
         )}
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }
