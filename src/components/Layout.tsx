@@ -29,7 +29,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Providers", href: "/providers", icon: Database },
   { name: "Cache", href: "/cache", icon: Zap },
-  { name: "Cost Analytics", href: "/cost-analytics", icon: DollarSign },
+  { name: "Cost Analytics", href: "/cost", icon: DollarSign },
   { name: "Alerts", href: "/alerts", icon: AlertCircle },
   { name: "Rate Limits", href: "/rate-limits", icon: Gauge },
   { name: "Autopilot", href: "/autopilot", icon: Rocket },

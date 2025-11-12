@@ -57,6 +57,14 @@ function App() {
                 }
               />
               <Route
+                path="/cost-analytics"
+                element={
+                  <ProtectedRoute>
+                    <CostDashboardEnhanced />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/validator"
                 element={
                   <ProtectedRoute>
