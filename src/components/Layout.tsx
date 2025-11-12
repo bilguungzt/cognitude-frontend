@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { ThemeContext } from "../contexts/ThemeContext";
 import {
   Menu,
   X,
@@ -13,7 +14,6 @@ import {
   Shield,
   FileText,
   Book,
-  Settings,
   Moon,
   Sun,
   LogOut,
@@ -41,8 +41,16 @@ const navigation = [
 export default function Layout({ children, title }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const location = useLocation();
+  const themeContext = useContext(ThemeContext);
+
+  if (!themeContext) {
+    // or a loading spinner, or some fallback UI
+    return null;
+  }
+
+  const { theme, toggleTheme } = themeContext;
+  const darkMode = theme === "dark";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -84,7 +92,14 @@ export default function Layout({ children, title }: LayoutProps) {
           {/* Bottom Actions */}
           <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-1">
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={() => {
+                console.log("Toggling dark mode");
+                if (toggleTheme) {
+                  toggleTheme();
+                } else {
+                  console.error("toggleTheme function is not available");
+                }
+              }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               {darkMode ? (
@@ -143,7 +158,14 @@ export default function Layout({ children, title }: LayoutProps) {
               {/* Bottom Actions */}
               <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-1">
                 <button
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={() => {
+                    console.log("Toggling dark mode (mobile)");
+                    if (toggleTheme) {
+                      toggleTheme();
+                    } else {
+                      console.error("toggleTheme function is not available");
+                    }
+                  }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   {darkMode ? (
