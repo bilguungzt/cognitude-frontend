@@ -1,61 +1,39 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, ArrowLeft, ExternalLink } from "lucide-react";
-import Footer from "../components/Footer";
+import { BookOpen, ExternalLink, Zap, Shield, DollarSign } from "lucide-react";
+import Layout from "../components/Layout";
 
 export default function DocsPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      {/* Header */}
-      <header className="glass border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-md">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                API Documentation
-              </h1>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="btn-ghost"
-              >
-                Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col">
+    <Layout title="API Documentation">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            API Documentation
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-md">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              API Documentation
+            </h2>
+          </div>
           <p className="text-gray-600">
             Comprehensive documentation for the Cognitude API
           </p>
         </div>
-        
+
         {/* Quick Links Section */}
         <div className="card mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Getting Started */}
+            {/* Autopilot Engine */}
             <div className="card-hover p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                🚀 Getting Started
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-primary-600" />
+                Autopilot Engine
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Learn how to authenticate and make your first API call in
-                minutes.
+                Learn how to use smart routing to optimize costs.
               </p>
               <button
                 onClick={() => navigate("/setup")}
@@ -65,13 +43,14 @@ export default function DocsPage() {
               </button>
             </div>
 
-            {/* Interactive Docs */}
+            {/* Response Validator */}
             <div className="card-hover p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                🧪 Try API (Swagger)
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary-600" />
+                Response Validator
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Test endpoints interactively with the Swagger UI interface.
+                Ensure you always get valid JSON responses.
               </p>
               <a
                 href="https://api.cognitude.com/docs"
@@ -83,19 +62,20 @@ export default function DocsPage() {
               </a>
             </div>
 
-            {/* Code Examples */}
+            {/* Budget Enforcement */}
             <div className="card-hover p-6">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                📚 Code Examples
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary-600" />
+                Budget Enforcement
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Copy-paste code snippets in Python, Node.js, cURL, and more.
+                Prevent cost overruns with budget controls.
               </p>
               <button
-                onClick={() => navigate("/setup")}
+                onClick={() => navigate("/rate-limits")}
                 className="btn-ghost text-sm"
               >
-                View Examples →
+                Configure Budgets →
               </button>
             </div>
           </div>
@@ -112,10 +92,7 @@ export default function DocsPage() {
             />
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 }
