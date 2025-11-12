@@ -32,6 +32,7 @@ import type {
   AutofixStats,
   ValidationTimelineEvent,
   RetryAttemptsData,
+  DashboardSummaryStats,
 } from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -306,6 +307,13 @@ class CognitudeAPI {
     return response.data;
   }
 
+  async getDashboardSummaryStatistics(): Promise<DashboardSummaryStats> {
+    const response = await this.client.get<DashboardSummaryStats>(
+      '/api/v1/dashboard/summary'
+    );
+    return response.data;
+  }
+
   // ==================== Autopilot Methods ====================
 
   async getAutopilotClassificationBreakdown(): Promise<AutopilotClassificationBreakdown> {
@@ -378,5 +386,9 @@ class CognitudeAPI {
 }
 
 // Export singleton instance
-export const api = new CognitudeAPI();
+import { mockApi } from './mockApi';
+
+const useMock = import.meta.env.VITE_USE_MOCK === 'true';
+
+export const api = useMock ? mockApi : new CognitudeAPI();
 export default api;

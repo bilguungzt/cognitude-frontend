@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Zap,
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -59,32 +59,31 @@ export default function DashboardPage() {
         cache,
         providerList,
         recs,
-        savings,
-        validation,
-        schemas,
+        summaryStats,
       ] = await Promise.all([
         api.getUsageStats({ group_by: "day" }).catch(() => null),
         api.getCacheStats().catch(() => null),
         api.getProviders().catch(() => []),
         api.getRecommendations().catch(() => null),
-        api.getAutopilotSavings().catch(() => null),
-        api.getValidationStats().catch(() => null),
-        api.getActiveSchemas().catch(() => null),
+        api.getDashboardSummaryStatistics().catch(() => null),
       ]);
 
       setUsageStats(usage);
       setCacheStats(cache);
       setProviders(providerList);
       setRecommendations(recs);
-      setAutopilotSavings(savings);
-      setValidationStats(validation);
-      setSchemaStats(schemas);
+
+      if (summaryStats) {
+        setAutopilotSavings({ cost_savings: summaryStats.totalCostSavings, cache_hit_rate: 0 });
+        setValidationStats({ success_rate: 0, failure_rate: summaryStats.validationFailuresLast24h, autofix_success_rate: 0 });
+        setSchemaStats([{ schema_name: 'Active Schemas', total_attempts: summaryStats.activeSchemas, failure_rate: 0, avg_retries: 0 }]);
+      }
     } catch (err) {
       setError(api.handleError(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   if (loading) {
     return (

@@ -283,8 +283,8 @@ export interface AutopilotModelRouting {
 }
 
 export interface AutopilotSavings {
- cost_savings: number;
- cache_hit_rate: number;
+  cost_savings: number;
+  cache_hit_rate: number;
 }
 
 export interface AutopilotLog {
@@ -333,6 +333,15 @@ export interface ValidationTimelineEvent {
   request_summary: string;
   response_summary: string;
 }
+// ==================== Dashboard Summary ====================
+
+export interface DashboardSummaryStats {
+  totalCostSavings: number;
+  autopilotDecisionsToday: number;
+  validationFailuresLast24h: number;
+  activeSchemas: number;
+}
+
 // ==================== Error Types ====================
 
 export interface APIError {

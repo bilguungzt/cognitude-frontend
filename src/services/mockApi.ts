@@ -17,15 +17,14 @@ import type {
   RateLimitUpdate,
   AutopilotSavingsBreakdown,
   AutopilotCostComparison,
+  AutofixStats,
 } from "../types/api";
-
-function fetchJson<T>(path: string): Promise<T> {
-  return fetch(`/mock/${path}.json`).then(async (r) => {
-    if (!r.ok)
-      throw new Error(`Mock fetch failed: ${r.status} ${r.statusText}`);
-    return (await r.json()) as T;
-  });
-}
+import {
+  dashboardSummaryStatistics,
+  autopilotDecisionLogs,
+  validationLogs,
+  schemaConfigurations,
+} from "../lib/mockData";
 
 class MockCognitudeAPI {
   private apiKey: string | null = null;
@@ -45,7 +44,7 @@ class MockCognitudeAPI {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getApiKey();
+    return true;
   }
 
   // Auth (mocked)
@@ -62,18 +61,7 @@ class MockCognitudeAPI {
 
   // Providers
   async getProviders(): Promise<Provider[]> {
-    const data = await fetchJson<Provider[]>("providers");
-    // normalize to Provider shape expected by the frontend where possible
-    return data.map((p: Provider) => ({
-      id: p.id,
-      organization_id: p.organization_id || 1,
-      provider: p.provider,
-      api_key: "sk-mock-api-key",
-      priority: p.priority || 0,
-      enabled: !!p.enabled,
-      created_at: p.created_at || new Date().toISOString(),
-      updated_at: p.updated_at,
-    }));
+    return [];
   }
 
   async getProvider(providerId: number): Promise<Provider> {
@@ -113,34 +101,35 @@ class MockCognitudeAPI {
 
   // Chat completions
   async chatCompletion(
-    request: ChatCompletionRequest
+    _request: ChatCompletionRequest
   ): Promise<ChatCompletionResponse> {
-    const sample = await fetchJson<ChatCompletionResponse>("chat_completion_sample");
-    // adapt sample to ChatCompletionResponse expected by frontend types
-    const resp: ChatCompletionResponse = {
-      id: sample.id,
-      object: sample.object || "chat.completion",
-      created: sample.created || Math.floor(Date.now() / 1000),
-      model: sample.model || request.model || "gpt-3.5-turbo",
-      choices: sample.choices || [
+    const sample: ChatCompletionResponse = {
+      id: "chatcmpl-123",
+      object: "chat.completion",
+      created: 1677652288,
+      model: "gpt-3.5-turbo-0613",
+      choices: [
         {
           index: 0,
-          message: { role: "assistant", content: "Mock response" },
+          message: {
+            role: "assistant",
+            content: "Hello! How can I help you today?",
+          },
           finish_reason: "stop",
         },
       ],
-      usage: sample.usage || {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0,
+      usage: {
+        prompt_tokens: 9,
+        completion_tokens: 12,
+        total_tokens: 21,
       },
       x_cognitude: {
-        cached: sample.x_cognitude.cached || false,
-        cost: sample.x_cognitude.cost || 0,
-        provider: sample.x_cognitude.provider || "mock",
+        cached: false,
+        cost: 0.000021,
+        provider: "openai",
       },
     };
-    return resp;
+    return sample;
   }
 
   async smartCompletion(
@@ -152,35 +141,15 @@ class MockCognitudeAPI {
 
   // Analytics
   async getUsageStats(_params?: Record<string, string>): Promise<UsageStats> {
-    const raw = await fetchJson<UsageStats>("usage_stats");
-    // map raw fields into the frontend UsageStats shape
-    const cache_hits = raw.daily_usage
-      ? raw.daily_usage.reduce(
-          (s: number, d) => s + (d.requests || 0),
-          0
-        )
-      : 0;
-    const breakdown = (raw.breakdown || []).map((p) => ({
-      provider: p.provider,
-      requests: p.requests,
-      cost: p.cost,
-      tokens: p.tokens || 0,
-    }));
-    const daily_usage = (raw.daily_usage || []).map((d) => ({
-      date: d.date,
-      requests: d.requests,
-      cost: d.cost,
-    }));
-    const mapped: UsageStats = {
-      total_requests: raw.total_requests || 0,
-      total_cost: raw.total_cost || 0,
-      cache_hits,
-      cache_hit_rate: raw.cache_hit_rate || 0,
-      cost_savings: raw.cost_savings || 0,
-      breakdown,
-      daily_usage,
+    return {
+      total_requests: 12345,
+      total_cost: 123.45,
+      cache_hits: 1234,
+      cache_hit_rate: 0.1,
+      cost_savings: 12.34,
+      breakdown: [],
+      daily_usage: [],
     };
-    return mapped;
   }
 
   async getRecommendations(): Promise<RecommendationsResponse> {
@@ -227,24 +196,22 @@ class MockCognitudeAPI {
 
   // Cache
   async getCacheStats(): Promise<CacheStats> {
-    const raw = await fetchJson<CacheStats>("cache_stats");
-    // construct a simple CacheStats structure expected by types (redis/postgres breakdown)
     return {
       redis: {
-        hits: raw.redis.hits || 0,
-        misses: Math.max(0, (raw.redis.total_keys || 0) - (raw.redis.hits || 0)),
-        hit_rate: raw.redis.hit_rate || 0,
-        total_keys: raw.redis.total_keys || 0,
+        hits: 1234,
+        misses: 123,
+        hit_rate: 0.9,
+        total_keys: 1357,
         memory_usage_mb: 12.3,
       },
       postgresql: {
-        total_cached_responses: raw.postgresql.total_cached_responses || 0,
-        cost_savings: raw.postgresql.cost_savings || 0,
+        total_cached_responses: 12345,
+        cost_savings: 123.45,
         oldest_cache_entry: new Date().toISOString(),
       },
       lifetime_savings: {
-        total_cost_saved: raw.lifetime_savings.total_cost_saved || 0,
-        requests_served_from_cache: Math.floor((raw.lifetime_savings.requests_served_from_cache || 0) / 1) || 0,
+        total_cost_saved: 1234.56,
+        requests_served_from_cache: 123456,
       },
     };
   }
@@ -259,15 +226,7 @@ class MockCognitudeAPI {
 
   // Alerts
   async getAlertChannels(): Promise<AlertChannel[]> {
-    const raw = await fetchJson<{ channels: AlertChannel[] }>("alerts");
-    return (raw.channels || []).map((c: AlertChannel, i: number) => ({
-      id: c.id || i + 1,
-      organization_id: 1,
-      channel_type: c.channel_type,
-      configuration: c.configuration,
-      enabled: c.enabled ?? true,
-      created_at: c.created_at || new Date().toISOString(),
-    }));
+    return [];
   }
 
   async createAlertChannel(channel: AlertChannelCreate): Promise<AlertChannel> {
@@ -295,16 +254,14 @@ class MockCognitudeAPI {
   }
 
   async getAlertConfig(): Promise<AlertConfig> {
-    const raw = await fetchJson<{ configs: AlertConfig[] }>("alerts");
-    const cfg = (raw.configs && raw.configs[0]) || {};
     return {
-      id: cfg.id || 1,
+      id: 1,
       organization_id: 1,
-      cost_threshold_daily: cfg.cost_threshold_daily || undefined,
-      enabled: cfg.enabled ?? true,
-      created_at: cfg.created_at,
-      updated_at: cfg.updated_at,
-    } as AlertConfig;
+      cost_threshold_daily: 100,
+      enabled: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
   }
 
   async updateAlertConfig(config: AlertConfig): Promise<AlertConfig> {
@@ -313,8 +270,14 @@ class MockCognitudeAPI {
 
   // Rate limits
   async getRateLimitConfig(): Promise<RateLimitConfig> {
-    const raw = await fetchJson<{ config: RateLimitConfig }>("rate_limits");
-    return raw.config as RateLimitConfig;
+    return {
+      organization_id: 1,
+      requests_per_minute: 60,
+      requests_per_hour: 1000,
+      requests_per_day: 10000,
+      enabled: true,
+      updated_at: new Date().toISOString(),
+    };
   }
 
   async updateRateLimitConfig(
@@ -328,8 +291,72 @@ class MockCognitudeAPI {
     } as RateLimitConfig;
   }
 
+  // New Mock Data Methods
+  async getDashboardSummaryStatistics() {
+    return dashboardSummaryStatistics;
+  }
+
+  async getAutopilotDecisionLogs() {
+    return autopilotDecisionLogs;
+  }
+
+  async getValidationLogs() {
+    return validationLogs;
+  }
+
+  async getSchemaConfigurations() {
+    return schemaConfigurations;
+  }
+
+  async getSchemaStats() {
+    return { top_5_most_used: [] };
+  }
+
+  async uploadSchema(name: string, schema: object) {
+    console.log("Mock upload schema", name, schema);
+    return { message: "Schema uploaded successfully" };
+  }
+
+  async getActiveSchemas() {
+    return [];
+  }
+
+  async getFailedValidationLogs() {
+    return [];
+  }
+
+  async getValidationStats() {
+    return {
+      success_rate: 0,
+      failure_rate: 0,
+      autofix_success_rate: 0,
+    };
+  }
+
+  async getIssueBreakdown() {
+    return {
+      "Invalid JSON": 0,
+      "Schema Mismatch": 0,
+    };
+  }
+
+  async getAutofixStats(): Promise<AutofixStats> {
+    return {
+      retries: {
+        "0": 100,
+        "1": 20,
+        "2": 5,
+      },
+      average_retries: 0.3,
+    };
+  }
+
+  async getValidationTimeline() {
+    return [];
+  }
+
   // Error helper
-  handleError(_error: unknown): string {
+  handleError(): string {
     return "Mock error";
   }
 }

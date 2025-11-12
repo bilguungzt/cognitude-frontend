@@ -39,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setApiKey(null);
   };
 
-  const isAuthenticated = !!apiKey;
+  const isAuthenticated = api.isAuthenticated();
 
   return (
     <AuthContext.Provider
