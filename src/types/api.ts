@@ -225,6 +225,48 @@ export interface RateLimitUpdate {
   enabled?: boolean;
 }
 
+// ==================== Validation Logs ====================
+
+export interface ValidationLog {
+  id: number;
+  timestamp: string;
+  status: "success" | "failure";
+  error_details?: string;
+  request_id: string;
+}
+
+// ==================== Schema Management ====================
+
+export interface SchemaStat {
+  schema_name: string;
+  total_attempts: number;
+  failure_rate: number;
+  avg_retries: number;
+}
+
+// ==================== Model Management ====================
+
+export interface ModelFeature {
+  id: number;
+  feature_name: string;
+  feature_type: "numeric" | "categorical";
+  order: number;
+  baseline_stats?: {
+    mean?: number;
+    std?: number;
+  };
+}
+
+export interface Model {
+  id: number;
+  name: string;
+  version: string;
+  description?: string;
+  features: ModelFeature[];
+  created_at: string;
+  updated_at: string;
+}
+
 // ==================== Error Types ====================
 
 export interface APIError {

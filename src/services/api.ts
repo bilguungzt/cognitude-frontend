@@ -18,6 +18,9 @@ import type {
   RateLimitConfig,
   RateLimitUpdate,
   APIError,
+  Model,
+  SchemaStat,
+  ValidationLog,
 } from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -239,6 +242,34 @@ class CognitudeAPI {
       '/rate-limits/config',
       config
     );
+    return response.data;
+  }
+
+  // ==================== Model Management ====================
+
+  async getModels(): Promise<Model[]> {
+    const response = await this.client.get<Model[]>('/models/');
+    return response.data;
+  }
+
+  async getModel(modelId: number): Promise<Model> {
+    const response = await this.client.get<Model>(`/models/${modelId}`);
+    return response.data;
+  }
+
+  // ==================== Schema Management ====================
+
+  async getSchemaStats(): Promise<{ top_5_most_used: SchemaStat[] }> {
+    const response = await this.client.get<{ top_5_most_used: SchemaStat[] }>(
+      '/schemas/stats'
+    );
+    return response.data;
+  }
+
+  // ==================== Validation Logs ====================
+
+  async getValidationLogs(): Promise<ValidationLog[]> {
+    const response = await this.client.get<ValidationLog[]>('/validation-logs/');
     return response.data;
   }
 
