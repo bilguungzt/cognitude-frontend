@@ -15,10 +15,11 @@ import type {
   AlertConfig,
   RateLimitConfig,
   RateLimitUpdate,
-  APIError,
+  AutopilotSavingsBreakdown,
+  AutopilotCostComparison,
 } from "../types/api";
 
-function fetchJson<T = any>(path: string): Promise<T> {
+function fetchJson<T>(path: string): Promise<T> {
   return fetch(`/mock/${path}.json`).then(async (r) => {
     if (!r.ok)
       throw new Error(`Mock fetch failed: ${r.status} ${r.statusText}`);
@@ -61,13 +62,13 @@ class MockCognitudeAPI {
 
   // Providers
   async getProviders(): Promise<Provider[]> {
-    const data = await fetchJson<any[]>("providers");
+    const data = await fetchJson<Provider[]>("providers");
     // normalize to Provider shape expected by the frontend where possible
-    return data.map((p) => ({
+    return data.map((p: Provider) => ({
       id: p.id,
       organization_id: p.organization_id || 1,
       provider: p.provider,
-      api_key: p.masked_api_key || "sk-mock",
+      api_key: "sk-mock-api-key",
       priority: p.priority || 0,
       enabled: !!p.enabled,
       created_at: p.created_at || new Date().toISOString(),
@@ -114,7 +115,7 @@ class MockCognitudeAPI {
   async chatCompletion(
     request: ChatCompletionRequest
   ): Promise<ChatCompletionResponse> {
-    const sample = await fetchJson<any>("chat_completion_sample");
+    const sample = await fetchJson<ChatCompletionResponse>("chat_completion_sample");
     // adapt sample to ChatCompletionResponse expected by frontend types
     const resp: ChatCompletionResponse = {
       id: sample.id,
@@ -134,9 +135,9 @@ class MockCognitudeAPI {
         total_tokens: 0,
       },
       x_cognitude: {
-        cached: sample.cached || false,
-        cost: sample.cost_usd || 0,
-        provider: sample.provider || "mock",
+        cached: sample.x_cognitude.cached || false,
+        cost: sample.x_cognitude.cost || 0,
+        provider: sample.x_cognitude.provider || "mock",
       },
     };
     return resp;
@@ -146,26 +147,26 @@ class MockCognitudeAPI {
     request: Omit<ChatCompletionRequest, "model">
   ): Promise<ChatCompletionResponse> {
     // simply reuse chatCompletion mock
-    return this.chatCompletion({ ...(request as any), model: "smart-mock" });
+    return this.chatCompletion({ ...request, model: "smart-mock" });
   }
 
   // Analytics
-  async getUsageStats(_params?: any): Promise<UsageStats> {
-    const raw = await fetchJson<any>("usage_stats");
+  async getUsageStats(_params?: Record<string, string>): Promise<UsageStats> {
+    const raw = await fetchJson<UsageStats>("usage_stats");
     // map raw fields into the frontend UsageStats shape
-    const cache_hits = raw.usage_by_day
-      ? raw.usage_by_day.reduce(
-          (s: number, d: any) => s + (d.cached_requests || 0),
+    const cache_hits = raw.daily_usage
+      ? raw.daily_usage.reduce(
+          (s: number, d) => s + (d.requests || 0),
           0
         )
       : 0;
-    const breakdown = (raw.usage_by_provider || []).map((p: any) => ({
+    const breakdown = (raw.breakdown || []).map((p) => ({
       provider: p.provider,
       requests: p.requests,
       cost: p.cost,
-      tokens: p.total_tokens || 0,
+      tokens: p.tokens || 0,
     }));
-    const daily_usage = (raw.usage_by_day || []).map((d: any) => ({
+    const daily_usage = (raw.daily_usage || []).map((d) => ({
       date: d.date,
       requests: d.requests,
       cost: d.cost,
@@ -175,7 +176,7 @@ class MockCognitudeAPI {
       total_cost: raw.total_cost || 0,
       cache_hits,
       cache_hit_rate: raw.cache_hit_rate || 0,
-      cost_savings: raw.estimated_savings_usd || 0,
+      cost_savings: raw.cost_savings || 0,
       breakdown,
       daily_usage,
     };
@@ -205,26 +206,45 @@ class MockCognitudeAPI {
     };
   }
 
+  async getAutopilotSavingsBreakdown(
+    _params?: Record<string, string>
+  ): Promise<AutopilotSavingsBreakdown> {
+    return {
+      "Model Downgrade": { savings: 120.5, requests: 1000 },
+      "Cache Hit": { savings: 45.0, requests: 500 },
+    };
+  }
+
+  async getAutopilotCostComparison(
+    _params?: Record<string, string>
+  ): Promise<AutopilotCostComparison> {
+    return {
+      could_have_spent: 500.0,
+      actually_spent: 334.5,
+      savings: 165.5,
+    };
+  }
+
   // Cache
   async getCacheStats(): Promise<CacheStats> {
-    const raw = await fetchJson<any>("cache_stats");
+    const raw = await fetchJson<CacheStats>("cache_stats");
     // construct a simple CacheStats structure expected by types (redis/postgres breakdown)
     return {
       redis: {
-        hits: raw.total_hits || 0,
-        misses: Math.max(0, (raw.total_entries || 0) - (raw.total_hits || 0)),
-        hit_rate: raw.hit_rate || 0,
-        total_keys: raw.total_entries || 0,
+        hits: raw.redis.hits || 0,
+        misses: Math.max(0, (raw.redis.total_keys || 0) - (raw.redis.hits || 0)),
+        hit_rate: raw.redis.hit_rate || 0,
+        total_keys: raw.redis.total_keys || 0,
         memory_usage_mb: 12.3,
       },
       postgresql: {
-        total_cached_responses: raw.total_entries || 0,
-        cost_savings: raw.estimated_savings_usd || 0,
+        total_cached_responses: raw.postgresql.total_cached_responses || 0,
+        cost_savings: raw.postgresql.cost_savings || 0,
         oldest_cache_entry: new Date().toISOString(),
       },
       lifetime_savings: {
-        total_cost_saved: raw.estimated_savings_usd || 0,
-        requests_served_from_cache: Math.floor((raw.total_hits || 0) / 1) || 0,
+        total_cost_saved: raw.lifetime_savings.total_cost_saved || 0,
+        requests_served_from_cache: Math.floor((raw.lifetime_savings.requests_served_from_cache || 0) / 1) || 0,
       },
     };
   }
@@ -239,13 +259,13 @@ class MockCognitudeAPI {
 
   // Alerts
   async getAlertChannels(): Promise<AlertChannel[]> {
-    const raw = await fetchJson<any>("alerts");
-    return (raw.channels || []).map((c: any, i: number) => ({
+    const raw = await fetchJson<{ channels: AlertChannel[] }>("alerts");
+    return (raw.channels || []).map((c: AlertChannel, i: number) => ({
       id: c.id || i + 1,
       organization_id: 1,
       channel_type: c.channel_type,
       configuration: c.configuration,
-      enabled: c.is_active ?? true,
+      enabled: c.enabled ?? true,
       created_at: c.created_at || new Date().toISOString(),
     }));
   }
@@ -275,12 +295,12 @@ class MockCognitudeAPI {
   }
 
   async getAlertConfig(): Promise<AlertConfig> {
-    const raw = await fetchJson<any>("alerts");
+    const raw = await fetchJson<{ configs: AlertConfig[] }>("alerts");
     const cfg = (raw.configs && raw.configs[0]) || {};
     return {
       id: cfg.id || 1,
       organization_id: 1,
-      cost_threshold_daily: cfg.threshold_usd || undefined,
+      cost_threshold_daily: cfg.cost_threshold_daily || undefined,
       enabled: cfg.enabled ?? true,
       created_at: cfg.created_at,
       updated_at: cfg.updated_at,
@@ -293,7 +313,7 @@ class MockCognitudeAPI {
 
   // Rate limits
   async getRateLimitConfig(): Promise<RateLimitConfig> {
-    const raw = await fetchJson<any>("rate_limits");
+    const raw = await fetchJson<{ config: RateLimitConfig }>("rate_limits");
     return raw.config as RateLimitConfig;
   }
 

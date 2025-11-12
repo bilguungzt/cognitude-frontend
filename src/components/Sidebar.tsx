@@ -13,6 +13,9 @@ import {
   LogOut,
   Sun,
   Moon,
+  Bot,
+  ShieldCheck,
+  FileCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -36,7 +39,10 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     { icon: DollarSign, label: "Cost Analytics", path: "/cost" },
     { icon: AlertCircle, label: "Alerts", path: "/alerts" },
     { icon: Shield, label: "Rate Limits", path: "/rate-limits" },
+    { icon: Bot, label: "Autopilot", path: "/autopilot" },
     { icon: BookOpen, label: "Setup", path: "/setup" },
+    { icon: ShieldCheck, label: "Validator", path: "/validator" },
+    { icon: FileCheck, label: "Schemas", path: "/schemas" },
     { icon: Settings, label: "API Docs", path: "/docs" },
   ];
 

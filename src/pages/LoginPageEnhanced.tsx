@@ -27,6 +27,8 @@ export default function LoginPageEnhanced() {
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    debugger;
+    console.log("handleLogin called");
     if (!apiKey.trim()) {
       setError("Please enter your API key");
       return;
@@ -44,7 +46,8 @@ export default function LoginPageEnhanced() {
       login(apiKey.trim());
       setSuccess("Login successful! Redirecting...");
       setTimeout(() => navigate("/dashboard"), 500);
-    } catch {
+    } catch (err) {
+      console.error("Login failed:", err);
       setError("Invalid API key. Please check and try again.");
       api.clearApiKey();
     } finally {

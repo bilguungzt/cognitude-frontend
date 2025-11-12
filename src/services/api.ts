@@ -21,6 +21,17 @@ import type {
   Model,
   SchemaStat,
   ValidationLog,
+ AutopilotClassificationBreakdown,
+ AutopilotModelRouting,
+ AutopilotSavings,
+ AutopilotLog,
+ AutopilotSavingsBreakdown,
+ AutopilotCostComparison,
+  ValidationStats,
+  IssueBreakdown,
+  AutofixStats,
+  ValidationTimelineEvent,
+  RetryAttemptsData,
 } from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -257,7 +268,29 @@ class CognitudeAPI {
     return response.data;
   }
 
-  // ==================== Schema Management ====================
+  // ==================== Schema Enforcement ====================
+
+  async getActiveSchemas(): Promise<SchemaStat[]> {
+    const response = await this.client.get<SchemaStat[]>('/api/schemas/active');
+    return response.data;
+  }
+
+  async getFailedValidationLogs(): Promise<ValidationLog[]> {
+    const response = await this.client.get<ValidationLog[]>('/api/schemas/validation-logs/failed');
+    return response.data;
+  }
+
+  async getRetryAttemptsData(): Promise<RetryAttemptsData> {
+    const response = await this.client.get<RetryAttemptsData>('/api/schemas/retry-attempts');
+    return response.data;
+  }
+
+  async uploadSchema(name: string, schema: object): Promise<{ message: string }> {
+    const response = await this.client.post<{ message: string }>('/api/schemas/upload', { name, schema });
+    return response.data;
+  }
+
+  // ==================== Schema Management (Legacy) ====================
 
   async getSchemaStats(): Promise<{ top_5_most_used: SchemaStat[] }> {
     const response = await this.client.get<{ top_5_most_used: SchemaStat[] }>(
@@ -266,17 +299,74 @@ class CognitudeAPI {
     return response.data;
   }
 
-  // ==================== Validation Logs ====================
+  // ==================== Validation Logs (Legacy) ====================
 
   async getValidationLogs(): Promise<ValidationLog[]> {
     const response = await this.client.get<ValidationLog[]>('/validation-logs/');
     return response.data;
   }
 
-  // ==================== Error Handling Helper ====================
+  // ==================== Autopilot Methods ====================
 
-  handleError(error: unknown): string {
-    if (axios.isAxiosError(error)) {
+  async getAutopilotClassificationBreakdown(): Promise<AutopilotClassificationBreakdown> {
+    const response = await this.client.get('/autopilot/classification-breakdown');
+   return response.data;
+ }
+
+ async getAutopilotModelRouting(): Promise<AutopilotModelRouting> {
+   const response = await this.client.get('/autopilot/model-routing');
+   return response.data;
+ }
+
+ async getAutopilotSavings(): Promise<AutopilotSavings> {
+   const response = await this.client.get('/autopilot/savings');
+   return response.data;
+ }
+
+ async getAutopilotLogs(): Promise<AutopilotLog[]> {
+   const response = await this.client.get('/autopilot/logs');
+   return response.data;
+ }
+
+  async getAutopilotSavingsBreakdown(params: { start_date: string, end_date: string }): Promise<AutopilotSavingsBreakdown> {
+    const response = await this.client.get('/autopilot/savings/breakdown', { params });
+    return response.data;
+  }
+
+  async getAutopilotCostComparison(params: { start_date: string, end_date: string }): Promise<AutopilotCostComparison> {
+    const response = await this.client.get('/autopilot/savings/comparison', { params });
+    return response.data;
+  }
+
+  // ==================== Response Validator ====================
+
+  async getValidationStats(): Promise<ValidationStats> {
+    const response = await this.client.get<ValidationStats>('/validator/stats');
+    return response.data;
+  }
+
+  async getIssueBreakdown(): Promise<IssueBreakdown> {
+    const response = await this.client.get<IssueBreakdown>('/validator/issue-breakdown');
+    return response.data;
+  }
+
+  async getAutofixStats(): Promise<AutofixStats> {
+    const response = await this.client.get<AutofixStats>('/validator/autofix-stats');
+    return response.data;
+  }
+
+  async getValidationTimeline(params?: {
+    status?: 'all' | 'success' | 'failure';
+    error_type?: string;
+  }): Promise<ValidationTimelineEvent[]> {
+    const response = await this.client.get<ValidationTimelineEvent[]>('/validator/timeline', { params });
+    return response.data;
+  }
+
+  // ==================== Error Handling Helper ====================
+ 
+   public handleError(error: unknown): string {
+     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<APIError>;
       if (axiosError.response?.data?.error) {
         return axiosError.response.data.error.message;

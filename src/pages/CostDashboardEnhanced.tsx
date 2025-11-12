@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services";
-import type { UsageStats, DailyUsage } from "../types/api";
+import type {
+  UsageStats,
+  DailyUsage,
+  AutopilotSavingsBreakdown as AutopilotSavingsBreakdownType,
+  AutopilotCostComparison as AutopilotCostComparisonType,
+} from "../types/api";
 import {
   BarChart,
   Bar,
@@ -22,9 +27,15 @@ import {
 } from "lucide-react";
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
+import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
+import AutopilotCostComparison from "../components/AutopilotCostComparison";
 
 export default function CostDashboardEnhanced() {
   const [analyticsData, setAnalyticsData] = useState<UsageStats | null>(null);
+  const [autopilotSavingsBreakdown, setAutopilotSavingsBreakdown] =
+    useState<AutopilotSavingsBreakdownType | null>(null);
+  const [autopilotCostComparison, setAutopilotCostComparison] =
+    useState<AutopilotCostComparisonType | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -73,6 +84,18 @@ export default function CostDashboardEnhanced() {
           group_by: "day",
         });
         setAnalyticsData(data);
+
+        const savingsBreakdown = await api.getAutopilotSavingsBreakdown({
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+        });
+        setAutopilotSavingsBreakdown(savingsBreakdown);
+
+        const costComparison = await api.getAutopilotCostComparison({
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+        });
+        setAutopilotCostComparison(costComparison);
       } catch (err) {
         setError("Failed to load analytics data");
         console.error("Error loading analytics:", err);
@@ -446,6 +469,21 @@ export default function CostDashboardEnhanced() {
                     </ResponsiveContainer>
                   </div>
                 </div>
+
+                {/* Autopilot Sections */}
+                {autopilotCostComparison && (
+                  <div className="mb-8">
+                    <AutopilotCostComparison data={autopilotCostComparison} />
+                  </div>
+                )}
+
+                {autopilotSavingsBreakdown && (
+                  <div className="mb-8">
+                    <AutopilotSavingsBreakdown
+                      data={autopilotSavingsBreakdown}
+                    />
+                  </div>
+                )}
 
                 {/* Usage Table */}
                 <div className="card">

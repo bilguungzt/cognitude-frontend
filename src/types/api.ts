@@ -244,6 +244,11 @@ export interface SchemaStat {
   avg_retries: number;
 }
 
+export interface RetryAttemptsData {
+  labels: string[]; // e.g., ['0 Retries', '1 Retry', '2 Retries', '3+ Retries']
+  values: number[]; // e.g., [1500, 250, 50, 10]
+}
+
 // ==================== Model Management ====================
 
 export interface ModelFeature {
@@ -267,6 +272,67 @@ export interface Model {
   updated_at: string;
 }
 
+// ==================== Autopilot Types ====================
+
+export interface AutopilotClassificationBreakdown {
+ [classification: string]: number;
+}
+
+export interface AutopilotModelRouting {
+ [model: string]: number;
+}
+
+export interface AutopilotSavings {
+ cost_savings: number;
+ cache_hit_rate: number;
+}
+
+export interface AutopilotLog {
+ timestamp: string;
+ original_model: string;
+ selected_model: string;
+ reason: string;
+}
+export interface AutopilotSavingsBreakdown {
+  [reason: string]: {
+    savings: number;
+    requests: number;
+  };
+}
+
+export interface AutopilotCostComparison {
+  could_have_spent: number;
+  actually_spent: number;
+  savings: number;
+}
+
+// ==================== Response Validator Types ====================
+
+export interface ValidationStats {
+  success_rate: number;
+  failure_rate: number;
+  autofix_success_rate: number;
+}
+
+export interface IssueBreakdown {
+  [issue_type: string]: number;
+}
+
+export interface AutofixStats {
+  retries: {
+    [num_retries: string]: number;
+  };
+  average_retries: number;
+}
+
+export interface ValidationTimelineEvent {
+  id: string;
+  timestamp: string;
+  status: 'success' | 'failure';
+  error_type: string | null;
+  request_summary: string;
+  response_summary: string;
+}
 // ==================== Error Types ====================
 
 export interface APIError {

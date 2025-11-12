@@ -8,13 +8,16 @@ import ProvidersPage from "./pages/ProvidersPage";
 import CachePage from "./pages/CachePage";
 import AlertsPage from "./pages/AlertsPage";
 import RateLimitsPage from "./pages/RateLimitsPage";
+import AutopilotPage from "./pages/AutopilotPage";
 import SetupPage from "./pages/SetupPage";
 import DocsPage from "./pages/DocsPage";
 import CostDashboardEnhanced from "./pages/CostDashboardEnhanced";
+import ResponseValidatorPage from "./pages/ResponseValidatorPage";
+import SchemaEnforcementPage from "./pages/SchemaEnforcementPage";
 import { ThemeProvider } from "./contexts/ThemeProvider";
 
 function App() {
- return (
+  return (
     <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
@@ -62,6 +65,14 @@ function App() {
                 }
               />
               <Route
+                path="/autopilot"
+                element={
+                  <ProtectedRoute>
+                    <AutopilotPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/cost"
                 element={
                   <ProtectedRoute>
@@ -82,6 +93,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <DocsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/validator"
+                element={
+                  <ProtectedRoute>
+                    <ResponseValidatorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemas"
+                element={
+                  <ProtectedRoute>
+                    <SchemaEnforcementPage />
                   </ProtectedRoute>
                 }
               />

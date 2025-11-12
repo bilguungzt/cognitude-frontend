@@ -15,12 +15,20 @@ import {
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
-import api from "../services";
+import { api } from "../services/api";
+import {
+  AutopilotSavingsSummaryCard,
+  ResponseValidationHealthMetrics,
+  SchemaEnforcementStatistics,
+} from "../components/Dashboard/SummaryCards";
 import type {
   UsageStats,
   CacheStats,
   Provider,
   RecommendationsResponse,
+  AutopilotSavings,
+  ValidationStats,
+  SchemaStat,
 } from "../types/api";
 
 export default function DashboardPage() {
@@ -31,6 +39,11 @@ export default function DashboardPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [recommendations, setRecommendations] =
     useState<RecommendationsResponse | null>(null);
+  const [autopilotSavings, setAutopilotSavings] =
+    useState<AutopilotSavings | null>(null);
+  const [validationStats, setValidationStats] =
+    useState<ValidationStats | null>(null);
+  const [schemaStats, setSchemaStats] = useState<SchemaStat[] | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -41,17 +54,31 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      const [usage, cache, providerList, recs] = await Promise.all([
+      const [
+        usage,
+        cache,
+        providerList,
+        recs,
+        savings,
+        validation,
+        schemas,
+      ] = await Promise.all([
         api.getUsageStats({ group_by: "day" }).catch(() => null),
         api.getCacheStats().catch(() => null),
         api.getProviders().catch(() => []),
         api.getRecommendations().catch(() => null),
+        api.getAutopilotSavings().catch(() => null),
+        api.getValidationStats().catch(() => null),
+        api.getActiveSchemas().catch(() => null),
       ]);
 
       setUsageStats(usage);
       setCacheStats(cache);
       setProviders(providerList);
       setRecommendations(recs);
+      setAutopilotSavings(savings);
+      setValidationStats(validation);
+      setSchemaStats(schemas);
     } catch (err) {
       setError(api.handleError(err));
     } finally {
@@ -185,7 +212,15 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* New Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <AutopilotSavingsSummaryCard data={autopilotSavings} />
+          <ResponseValidationHealthMetrics data={validationStats} />
+          <SchemaEnforcementStatistics data={schemaStats} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -311,6 +346,20 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+          <div>
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Public Benchmarks
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Compare the performance of different models on public benchmarks.
+              </p>
+              <Link to="/benchmarks" className="btn btn-primary w-full" aria-disabled="true">
+                View Benchmarks
+              </Link>
+            </div>
           </div>
         </div>
 
