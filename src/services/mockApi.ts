@@ -18,9 +18,9 @@ import type {
   AutopilotSavingsBreakdown,
   AutopilotCostComparison,
   AutofixStats,
- Model,
- CreateModelRequest,
- ReconciliationReport,
+  Model,
+  CreateModelRequest,
+  ReconciliationReport,
 } from "../types/api";
 import {
   dashboardSummaryStatistics,
@@ -175,7 +175,7 @@ class MockCognitudeAPI {
       const date = new Date();
       date.setDate(date.getDate() - i);
       return {
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split("T")[0],
         requests: Math.floor(Math.random() * 1000) + 500,
         cost: Math.random() * 20 + 10,
       };
@@ -188,8 +188,8 @@ class MockCognitudeAPI {
       cache_hit_rate: 0.1,
       cost_savings: 12.34,
       breakdown: [
-        { model: 'gpt-4', requests: 5000, cost: 80.25, tokens: 500000 },
-        { model: 'gpt-3.5-turbo', requests: 7345, cost: 43.20, tokens: 734500 },
+        { model: "gpt-4", requests: 5000, cost: 80.25, tokens: 500000 },
+        { model: "gpt-3.5-turbo", requests: 7345, cost: 43.2, tokens: 734500 },
       ],
       daily_usage: daily_usage.reverse(),
     };
@@ -237,7 +237,9 @@ class MockCognitudeAPI {
     };
   }
 
-  async getReconciliationReports(_params?: Record<string, string>): Promise<{ reports: ReconciliationReport[] }> {
+  async getReconciliationReports(
+    _params?: Record<string, string>
+  ): Promise<{ reports: ReconciliationReport[] }> {
     // return a small set of mock reconciliation reports
     const makeDate = (daysAgo: number) => {
       const d = new Date();
@@ -252,7 +254,7 @@ class MockCognitudeAPI {
           start_date: makeDate(7),
           end_date: makeDate(1),
           internal_cost_usd: 123.45,
-          external_cost_usd: 123.00,
+          external_cost_usd: 123.0,
           variance_usd: 0.45,
           variance_percent: 0.36,
           status: "OK",
@@ -269,7 +271,7 @@ class MockCognitudeAPI {
           status: "DISCREPANCY_FOUND",
           created_at: new Date().toISOString(),
         },
-      ]
+      ],
     };
   }
 
@@ -399,19 +401,19 @@ class MockCognitudeAPI {
   async getActiveSchemas() {
     return [
       {
-        schema_name: 'user_profile',
+        schema_name: "user_profile",
         total_attempts: 1250,
         failure_rate: 0.05,
         avg_retries: 0.1,
       },
       {
-        schema_name: 'product_catalog',
+        schema_name: "product_catalog",
         total_attempts: 800,
         failure_rate: 0.12,
         avg_retries: 0.25,
       },
       {
-        schema_name: 'order_details',
+        schema_name: "order_details",
         total_attempts: 2500,
         failure_rate: 0.02,
         avg_retries: 0.05,
@@ -423,14 +425,14 @@ class MockCognitudeAPI {
     return [
       {
         id: 1,
-        request_id: 'req_123',
+        request_id: "req_123",
         timestamp: new Date().toISOString(),
-        status: 'failure' as "success" | "failure",
-        request_summary: 'Product catalog request',
-        response_summary: 'Invalid JSON format',
-        error_type: 'Invalid JSON',
+        status: "failure" as "success" | "failure",
+        request_summary: "Product catalog request",
+        response_summary: "Invalid JSON format",
+        error_type: "Invalid JSON",
         retries: 2,
-        schema_name: 'product_catalog',
+        schema_name: "product_catalog",
       },
     ];
   }
@@ -465,27 +467,27 @@ class MockCognitudeAPI {
   async getValidationTimeline() {
     return [
       {
-        id: '1',
+        id: "1",
         timestamp: new Date().toISOString(),
-        status: 'success' as 'success' | 'failure',
-        request_summary: 'User profile update',
-        response_summary: 'OK',
+        status: "success" as "success" | "failure",
+        request_summary: "User profile update",
+        response_summary: "OK",
         error_type: null,
       },
       {
-        id: '2',
+        id: "2",
         timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-        status: 'failure' as 'success' | 'failure',
-        request_summary: 'Product catalog request',
-        response_summary: 'Invalid JSON format',
-        error_type: 'Invalid JSON',
+        status: "failure" as "success" | "failure",
+        request_summary: "Product catalog request",
+        response_summary: "Invalid JSON format",
+        error_type: "Invalid JSON",
       },
       {
-        id: '3',
+        id: "3",
         timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        status: 'success' as 'success' | 'failure',
-        request_summary: 'Login attempt',
-        response_summary: 'OK',
+        status: "success" as "success" | "failure",
+        request_summary: "Login attempt",
+        response_summary: "OK",
         error_type: null,
       },
     ];
@@ -493,19 +495,19 @@ class MockCognitudeAPI {
 
   async getAutopilotClassificationBreakdown() {
     return {
-      'classification': 50,
-      'summarization': 25,
-      'translation': 15,
-      'generation': 10,
+      classification: 50,
+      summarization: 25,
+      translation: 15,
+      generation: 10,
     };
   }
 
   async getAutopilotModelRouting() {
     return {
-      'gpt-4': 20,
-      'gpt-3.5-turbo': 60,
-      'claude-2': 15,
-      'gemini-pro': 5,
+      "gpt-4": 20,
+      "gpt-3.5-turbo": 60,
+      "claude-2": 15,
+      "gemini-pro": 5,
     };
   }
 
@@ -520,21 +522,21 @@ class MockCognitudeAPI {
     return [
       {
         timestamp: new Date().toISOString(),
-        original_model: 'gpt-4',
-        selected_model: 'gpt-3.5-turbo',
-        reason: 'Cost optimization',
+        original_model: "gpt-4",
+        selected_model: "gpt-3.5-turbo",
+        reason: "Cost optimization",
       },
       {
         timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        original_model: 'gpt-4',
-        selected_model: 'gpt-4',
-        reason: 'High complexity',
+        original_model: "gpt-4",
+        selected_model: "gpt-4",
+        reason: "High complexity",
       },
       {
         timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-        original_model: 'claude-2',
-        selected_model: 'gpt-3.5-turbo',
-        reason: 'Cache hit',
+        original_model: "claude-2",
+        selected_model: "gpt-3.5-turbo",
+        reason: "Cache hit",
       },
     ];
   }
@@ -577,12 +579,13 @@ class MockCognitudeAPI {
   }
 
   async getEnhancedDashboardData() {
-    const generateSparkline = () => Array.from({ length: 20 }, () => Math.floor(Math.random() * 100));
+    const generateSparkline = () =>
+      Array.from({ length: 20 }, () => Math.floor(Math.random() * 100));
 
     return {
       heroStats: {
         couldHaveSpent: 18750.75,
-        actuallySpent: 14230.50,
+        actuallySpent: 14230.5,
         totalSavings: 4520.25,
         projectedMonthlySavings: 6100.0,
       },
@@ -628,13 +631,15 @@ class MockCognitudeAPI {
           id: "evt_1",
           timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
           type: "model_reroute",
-          description: "Rerouted 50 requests from `gpt-4` to `gpt-3.5-turbo` saving an estimated $5.20.",
+          description:
+            "Rerouted 50 requests from `gpt-4` to `gpt-3.5-turbo` saving an estimated $5.20.",
         },
         {
           id: "evt_2",
           timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
           type: "cache_hit",
-          description: "Served 120 requests from cache, avoiding fresh computation costs.",
+          description:
+            "Served 120 requests from cache, avoiding fresh computation costs.",
         },
         {
           id: "evt_3",
@@ -654,7 +659,10 @@ class MockCognitudeAPI {
         datasets: [
           {
             label: "Cumulative Savings",
-            data: Array.from({ length: 30 }, (_, i) => (i + 1) * 150 + Math.random() * 100),
+            data: Array.from(
+              { length: 30 },
+              (_, i) => (i + 1) * 150 + Math.random() * 100
+            ),
             borderColor: "#10B981",
             backgroundColor: "rgba(16, 185, 129, 0.1)",
             fill: true,
@@ -662,16 +670,24 @@ class MockCognitudeAPI {
         ],
       },
       cacheVsFresh: {
-        labels: Array.from({ length: 12 }, (_, i) => new Date(2023, i, 1).toLocaleString('default', { month: 'short' })),
+        labels: Array.from({ length: 12 }, (_, i) =>
+          new Date(2023, i, 1).toLocaleString("default", { month: "short" })
+        ),
         datasets: [
           {
             label: "Cached Responses",
-            data: [1200, 1500, 1800, 2200, 2500, 2800, 3100, 3400, 3700, 4000, 4300, 4600],
+            data: [
+              1200, 1500, 1800, 2200, 2500, 2800, 3100, 3400, 3700, 4000, 4300,
+              4600,
+            ],
             backgroundColor: "#4F46E5",
           },
           {
             label: "Fresh Computations",
-            data: [3000, 2800, 2600, 2400, 2200, 2000, 1800, 1600, 1400, 1200, 1000, 800],
+            data: [
+              3000, 2800, 2600, 2400, 2200, 2000, 1800, 1600, 1400, 1200, 1000,
+              800,
+            ],
             backgroundColor: "#A5B4FC",
           },
         ],
@@ -683,7 +699,7 @@ class MockCognitudeAPI {
     return {
       heroStats: {
         couldHaveSpent: 1250.75,
-        actuallySpent: 875.50,
+        actuallySpent: 875.5,
         savings: 375.25,
       },
       keyMetrics: [
@@ -704,7 +720,13 @@ class MockCognitudeAPI {
         },
       ],
       classificationBreakdown: {
-        labels: ["Classification", "Summarization", "Translation", "Generation", "Other"],
+        labels: [
+          "Classification",
+          "Summarization",
+          "Translation",
+          "Generation",
+          "Other",
+        ],
         datasets: [
           {
             data: [45, 25, 15, 10, 5],
@@ -738,33 +760,33 @@ class MockCognitudeAPI {
       logs: [
         {
           timestamp: new Date().toISOString(),
-          original_model: 'gpt-4',
-          selected_model: 'gpt-3.5-turbo',
-          reason: 'Cost optimization for simple query',
+          original_model: "gpt-4",
+          selected_model: "gpt-3.5-turbo",
+          reason: "Cost optimization for simple query",
           cost_saved: 0.0015,
           speed_improvement: 250,
         },
         {
           timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-          original_model: 'gpt-4',
-          selected_model: 'gpt-4',
-          reason: 'High complexity detected',
+          original_model: "gpt-4",
+          selected_model: "gpt-4",
+          reason: "High complexity detected",
           cost_saved: 0,
           speed_improvement: 0,
         },
         {
           timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-          original_model: 'claude-3-opus',
-          selected_model: 'claude-3-sonnet',
-          reason: 'Latency requirement met by smaller model',
+          original_model: "claude-3-opus",
+          selected_model: "claude-3-sonnet",
+          reason: "Latency requirement met by smaller model",
           cost_saved: 0.002,
           speed_improvement: 400,
         },
         {
           timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-          original_model: 'gemini-pro',
-          selected_model: 'gpt-3.5-turbo',
-          reason: 'Provider API latency spike',
+          original_model: "gemini-pro",
+          selected_model: "gpt-3.5-turbo",
+          reason: "Provider API latency spike",
           cost_saved: 0.0005,
           speed_improvement: 150,
         },

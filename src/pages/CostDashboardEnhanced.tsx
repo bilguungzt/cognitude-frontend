@@ -530,17 +530,21 @@ export default function CostDashboardEnhanced() {
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                               <div>
-                                <span className="font-medium">Requests:</span> {day.requests.toLocaleString()}
+                                <span className="font-medium">Requests:</span>{" "}
+                                {day.requests.toLocaleString()}
                               </div>
                               <div>
-                                <span className="font-medium">Cost/Request:</span> {formatCurrency(day.cost / day.requests)}
+                                <span className="font-medium">
+                                  Cost/Request:
+                                </span>{" "}
+                                {formatCurrency(day.cost / day.requests)}
                               </div>
                             </div>
                           </div>
                         )
                       )}
                     </div>
-                    
+
                     {/* Desktop View - Table */}
                     <div className="hidden sm:block">
                       <table className="min-w-full divide-y divide-gray-200">

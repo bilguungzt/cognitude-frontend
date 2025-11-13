@@ -36,7 +36,7 @@ import type {
   DashboardSummaryStats,
   AutopilotDashboardData,
   EnhancedDashboardData,
- ReconciliationReportResponse,
+  ReconciliationReportResponse,
 } from "../types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5175";
@@ -180,9 +180,12 @@ class CognitudeAPI {
     end_date?: string;
     limit?: number;
   }): Promise<ReconciliationReportResponse> {
-    const response = await this.client.get<ReconciliationReportResponse>("/reconciliation/reports", {
-      params,
-    });
+    const response = await this.client.get<ReconciliationReportResponse>(
+      "/reconciliation/reports",
+      {
+        params,
+      }
+    );
     return response.data;
   }
 
@@ -193,7 +196,10 @@ class CognitudeAPI {
     return response.data;
   }
 
-  async getUsageAnalytics(start_date: string, end_date: string): Promise<UsageStats> {
+  async getUsageAnalytics(
+    start_date: string,
+    end_date: string
+  ): Promise<UsageStats> {
     return this.getUsageStats({ start_date, end_date });
   }
 

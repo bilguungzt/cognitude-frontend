@@ -25,7 +25,7 @@ export default function ReconciliationCard() {
       setLoading(true);
       try {
         // the API client exposes getReconciliationReports
-  const data = await api.getReconciliationReports();
+        const data = await api.getReconciliationReports();
         // Expecting an array or { reports: [] }
         let list: ReconciliationReport[] = [];
         if (Array.isArray(data)) list = data;
@@ -79,14 +79,19 @@ export default function ReconciliationCard() {
                   )}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {new Date(latest.start_date).toLocaleDateString()} — {new Date(latest.end_date).toLocaleDateString()}
+                  {new Date(latest.start_date).toLocaleDateString()} —{" "}
+                  {new Date(latest.end_date).toLocaleDateString()}
                 </p>
                 <p className="text-sm text-gray-700 mt-2">
-                  Variance: <strong>{formatCurrency(latest.variance_usd)}</strong> ({latest.variance_percent?.toFixed(2)}%)
+                  Variance:{" "}
+                  <strong>{formatCurrency(latest.variance_usd)}</strong> (
+                  {latest.variance_percent?.toFixed(2)}%)
                 </p>
               </>
             ) : (
-              <p className="text-sm text-gray-600 mt-1">No reconciliation reports found</p>
+              <p className="text-sm text-gray-600 mt-1">
+                No reconciliation reports found
+              </p>
             )}
           </div>
 
