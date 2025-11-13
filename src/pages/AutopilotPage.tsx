@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import Layout from '../components/Layout';
-import { api } from '../services';
-import { DollarSign, Zap, Clock } from 'lucide-react';
-import HeroStats from '../components/Autopilot/HeroStats';
-import StatCard from '../components/Autopilot/StatCard';
-import ClassificationChart from '../components/Autopilot/ClassificationChart';
-import ModelRoutingChart from '../components/Autopilot/ModelRoutingChart';
-import Skeleton from '../components/Skeleton';
-import type { AutopilotDashboardData } from '../types/api';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Layout from "../components/Layout";
+import { api } from "../services";
+import { DollarSign, Zap, Clock } from "lucide-react";
+import HeroStats from "../components/Autopilot/HeroStats";
+import StatCard from "../components/Autopilot/StatCard";
+import ClassificationChart from "../components/Autopilot/ClassificationChart";
+import ModelRoutingChart from "../components/Autopilot/ModelRoutingChart";
+import Skeleton from "../components/Skeleton";
+import type { AutopilotDashboardData } from "../types/api";
 
 const AutopilotPage: React.FC = () => {
   const [data, setData] = useState<AutopilotDashboardData | null>(null);
@@ -48,7 +48,7 @@ const AutopilotPage: React.FC = () => {
       y: 0,
       opacity: 1,
       transition: {
-        type: 'spring' as const,
+        type: "spring" as const,
         stiffness: 100,
       },
     },
@@ -102,7 +102,8 @@ const AutopilotPage: React.FC = () => {
                 "Avg. Response Time": Clock,
                 "Total Requests": DollarSign,
               };
-              const Icon = icons[metric.title as keyof typeof icons] || DollarSign;
+              const Icon =
+                icons[metric.title as keyof typeof icons] || DollarSign;
               return (
                 <StatCard
                   key={index}
@@ -123,7 +124,8 @@ const AutopilotPage: React.FC = () => {
             <ClassificationChart
               data={data.classificationBreakdown.labels.reduce(
                 (acc, label, index) => {
-                  acc[label] = data.classificationBreakdown.datasets[0].data[index];
+                  acc[label] =
+                    data.classificationBreakdown.datasets[0].data[index];
                   return acc;
                 },
                 {} as { [key: string]: number }
@@ -134,29 +136,71 @@ const AutopilotPage: React.FC = () => {
 
           {/* Real-time Logs */}
           <motion.div variants={itemVariants}>
-            <div className="p-4 border rounded-md bg-card text-card-foreground">
-              <h2 className="text-lg font-semibold mb-4">Real-time Logs</h2>
+            {/* Using light-mode-friendly styles for the container */}
+            <div className="bg-white/50 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">
+                Real-time Logs
+              </h2>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+                <table className="min-w-full">
+                  {/* --- HEADER --- */}
+                  <thead>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Timestamp</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Original Model</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Selected Model</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Reason</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cost Saved</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Speed Improv.</th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Timestamp
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Original Model
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Selected Model
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Reason
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Cost Saved
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Speed Improv.
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+
+                  {/* --- BODY --- */}
+                  <tbody>
                     {data.logs.map((log, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{new Date(log.timestamp).toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.original_model}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.selected_model}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{log.reason}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-500">${log.cost_saved.toFixed(4)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-500">{log.speed_improvement}ms</td>
+                      <tr
+                        key={index}
+                        className="border-b border-gray-200 hover:bg-gray-50"
+                      >
+                        {/* Timestamp */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </td>
+
+                        {/* Models (Slightly lighter text) */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                          {log.original_model}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                          {log.selected_model}
+                        </td>
+
+                        {/* Reason (Allows wrapping) */}
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {log.reason}
+                        </td>
+
+                        {/* Cost Saved */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                          ${log.cost_saved.toFixed(4)}
+                        </td>
+
+                        {/* Speed Improv. */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-semibold">
+                          {log.speed_improvement}ms
+                        </td>
                       </tr>
                     ))}
                   </tbody>

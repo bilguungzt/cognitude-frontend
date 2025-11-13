@@ -63,7 +63,9 @@ export default function DashboardPage() {
       return (
         <div className="flex items-center justify-center h-96">
           <Loader className="w-8 h-8 animate-spin text-indigo-400" />
-          <span className="ml-4 text-lg text-gray-400">Loading Dashboard...</span>
+          <span className="ml-4 text-lg text-gray-400">
+            Loading Dashboard...
+          </span>
         </div>
       );
     }
@@ -96,10 +98,12 @@ export default function DashboardPage() {
       );
     }
 
-    const savingsChartData = data.savingsOverTime.labels.map((label, index) => ({
-      date: label,
-      cumulativeSavings: data.savingsOverTime.datasets[0].data[index],
-    }));
+    const savingsChartData = data.savingsOverTime.labels.map(
+      (label, index) => ({
+        date: label,
+        cumulativeSavings: data.savingsOverTime.datasets[0].data[index],
+      })
+    );
 
     const cacheChartData = data.cacheVsFresh.labels.map((label, index) => ({
       time: label,

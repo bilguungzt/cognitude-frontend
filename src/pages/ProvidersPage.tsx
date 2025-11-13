@@ -249,7 +249,7 @@ export default function ProvidersPage() {
                           <span className="text-sm text-text-secondary">
                             API Key:
                           </span>
-                          <code className="text-sm font-mono bg-neutral-100 dark:bg-neutral-700 px-2 py-1 rounded">
+                          <code className="text-sm font-mono bg-neutral-100 dark:bg-neutral-700 dark:text-white px-2 py-1 rounded">
                             {showApiKey[provider.id]
                               ? provider.api_key
                               : maskApiKey(provider.api_key)}
