@@ -12,8 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Calendar, TrendingUp, Activity, DollarSign } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import Layout from "../components/Layout";
 
 interface DailyUsage {
   date: string;
@@ -47,8 +46,6 @@ export default function CostDashboard() {
       .split("T")[0],
     end: new Date().toISOString().split("T")[0],
   });
-  const { logout } = useAuth();
-  const navigate = useNavigate();
 
   const loadAnalyticsData = useCallback(async () => {
     setLoading(true);
@@ -73,11 +70,11 @@ export default function CostDashboard() {
     try {
       setError("");
       const data = await api.getUsageAnalytics(dateRange.start, dateRange.end);
-      console.log('Fetched analytics data:', data);
+      console.log("Fetched analytics data:", data);
       setAnalyticsData(data);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
-        console.log('API returned 404, setting zero state data.');
+        console.log("API returned 404, setting zero state data.");
         setAnalyticsData(zeroStateData);
       } else {
         setError("Failed to load analytics data");
@@ -92,10 +89,7 @@ export default function CostDashboard() {
     loadAnalyticsData();
   }, [loadAnalyticsData]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  // Layout handles logout/navigation; no local logout needed here
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -114,43 +108,9 @@ export default function CostDashboard() {
     setDateRange((prev) => ({ ...prev, [key]: value }));
   };
 
-  console.log('Rendering with analyticsData:', analyticsData);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      {/* Header */}
-      <header className="glass border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-md">
-                <DollarSign className="w-6 h-6 text-indigo-600" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Cost Dashboard
-              </h1>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="btn-ghost"
-              >
-                Dashboard
-              </button>
-              <button onClick={() => navigate("/alerts")} className="btn-ghost">
-                Alert Settings
-              </button>
-              <button onClick={handleLogout} className="btn-secondary">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <Layout title="Cost Dashboard">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Date Range Selector */}
         <div className="mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -162,7 +122,7 @@ export default function CostDashboard() {
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => handleDateChange("start", e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <span className="hidden sm:flex items-center text-gray-500 mx-2">
@@ -173,7 +133,7 @@ export default function CostDashboard() {
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => handleDateChange("end", e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <button
@@ -267,10 +227,10 @@ export default function CostDashboard() {
               </h3>
               {analyticsData.usage_by_day.length > 0 ? (
                 <div
-                  className="h-96 w-full"
+                  className="h-60 sm:h-80 md:h-96 w-full"
                   ref={(el) =>
                     console.log(
-                      'Chart container dimensions:',
+                      "Chart container dimensions:",
                       el?.clientWidth,
                       el?.clientHeight
                     )
@@ -323,43 +283,65 @@ export default function CostDashboard() {
                 Daily Usage Breakdown
               </h3>
               {analyticsData.usage_by_day.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Requests
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cost
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {analyticsData.usage_by_day.map((day, index) => (
-                        <tr
-                          key={index}
-                          className={
-                            index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                          }
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <>
+                  <div className="sm:hidden space-y-3">
+                    {analyticsData.usage_by_day.map((day, index) => (
+                      <div
+                        key={index}
+                        className="p-4 bg-white rounded-lg shadow-sm border border-gray-100"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-gray-900">
                             {formatDate(day.date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {day.requests.toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          </div>
+                          <div className="text-sm font-semibold text-gray-900">
                             {formatCurrency(day.cost)}
-                          </td>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Requests: {day.requests.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Requests
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cost
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {analyticsData.usage_by_day.map((day, index) => (
+                          <tr
+                            key={index}
+                            className={
+                              index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                            }
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatDate(day.date)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {day.requests.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatCurrency(day.cost)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <p>No usage data available for the selected date range</p>
@@ -369,11 +351,13 @@ export default function CostDashboard() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">No analytics data available. This could be because there is no data for the selected date range or an error occurred.</p>
+            <p className="text-gray-500">
+              No analytics data available. This could be because there is no
+              data for the selected date range or an error occurred.
+            </p>
           </div>
         )}
-      </main>
-
-    </div>
+      </div>
+    </Layout>
   );
 }
