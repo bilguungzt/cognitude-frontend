@@ -173,6 +173,18 @@ class CognitudeAPI {
     return response.data;
   }
 
+  // ==================== Reconciliation ====================
+  async getReconciliationReports(params?: {
+    start_date?: string;
+    end_date?: string;
+    limit?: number;
+  }): Promise<unknown> {
+    const response = await this.client.get<unknown>("/reconciliation/reports", {
+      params,
+    });
+    return response.data;
+  }
+
   async getRecommendations(): Promise<RecommendationsResponse> {
     const response = await this.client.get<RecommendationsResponse>(
       "/analytics/recommendations"
@@ -180,7 +192,7 @@ class CognitudeAPI {
     return response.data;
   }
 
-  async getUsageAnalytics(start_date: string, end_date: string): Promise<any> {
+  async getUsageAnalytics(start_date: string, end_date: string): Promise<UsageStats> {
     return this.getUsageStats({ start_date, end_date });
   }
 

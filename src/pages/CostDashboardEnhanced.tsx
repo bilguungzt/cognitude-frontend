@@ -5,7 +5,6 @@ import type {
   UsageStats,
   DailyUsage,
   AutopilotSavingsBreakdown as AutopilotSavingsBreakdownType,
-  AutopilotCostComparison as AutopilotCostComparisonType,
 } from "../types/api";
 import {
   BarChart,
@@ -29,14 +28,12 @@ import {
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
-import AutopilotCostComparison from "../components/AutopilotCostComparison";
+import ReconciliationCard from "../components/ReconciliationCard";
 
 export default function CostDashboardEnhanced() {
   const [analyticsData, setAnalyticsData] = useState<UsageStats | null>(null);
   const [autopilotSavingsBreakdown, setAutopilotSavingsBreakdown] =
     useState<AutopilotSavingsBreakdownType | null>(null);
-  const [autopilotCostComparison, setAutopilotCostComparison] =
-    useState<AutopilotCostComparisonType | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -79,7 +76,7 @@ export default function CostDashboardEnhanced() {
 
       try {
         setError("");
-        const [data, savingsBreakdown, costComparison] = await Promise.all([
+        const [data, savingsBreakdown] = await Promise.all([
           api.getUsageStats({
             start_date: dateRange.start,
             end_date: dateRange.end,
@@ -89,14 +86,9 @@ export default function CostDashboardEnhanced() {
             start_date: dateRange.start,
             end_date: dateRange.end,
           }),
-          api.getAutopilotCostComparison({
-            start_date: dateRange.start,
-            end_date: dateRange.end,
-          }),
         ]);
         setAnalyticsData(data);
         setAutopilotSavingsBreakdown(savingsBreakdown);
-        setAutopilotCostComparison(costComparison);
       } catch (err: unknown) {
         console.error("Error loading analytics:", err);
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -111,16 +103,10 @@ export default function CostDashboardEnhanced() {
             daily_usage: [],
           });
           setAutopilotSavingsBreakdown({});
-          setAutopilotCostComparison({
-            could_have_spent: 0,
-            actually_spent: 0,
-            savings: 0,
-          });
         } else {
           setError("Failed to load analytics data");
           setAnalyticsData(null);
           setAutopilotSavingsBreakdown(null);
-          setAutopilotCostComparison(null);
         }
       } finally {
         setLoading(false);
@@ -498,12 +484,10 @@ export default function CostDashboardEnhanced() {
                   </div>
                 </div>
 
-                {/* Autopilot Sections */}
-                {autopilotCostComparison && (
-                  <div className="mb-8">
-                    <AutopilotCostComparison data={autopilotCostComparison} />
-                  </div>
-                )}
+                {/* Reconciliation / Autopilot Sections */}
+                <div className="mb-8">
+                  <ReconciliationCard />
+                </div>
 
                 {autopilotSavingsBreakdown && (
                   <div className="mb-8">
