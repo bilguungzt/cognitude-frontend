@@ -20,27 +20,6 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
-          {/* Dev banner: shows whether app is using mock or real API and the configured API URL */}
-          {import.meta.env.MODE !== "production" && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                background: "rgba(0,0,0,0.7)",
-                color: "white",
-                fontSize: 12,
-                padding: "4px 8px",
-                zIndex: 9999,
-                textAlign: "center",
-              }}
-            >
-              {`API MODE: ${
-                import.meta.env.VITE_USE_MOCK === "true" ? "MOCK" : "REAL"
-              } — URL: ${import.meta.env.VITE_API_URL}`}
-            </div>
-          )}
           <Routes>
             <Route path="/login" element={<LoginPageEnhanced />} />
             <Route
