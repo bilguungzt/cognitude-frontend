@@ -1,4 +1,3 @@
-import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { AutopilotClassificationBreakdown } from '../../types/api';
 
@@ -48,7 +47,7 @@ export default function ClassificationChart({ data }: Props) {
               nameKey="name"
               label={({ name, percent }) => `${name}: ${(Number(percent) * 100).toFixed(0)}%`}
             >
-              {chartData.map((entry, index) => (
+              {chartData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>

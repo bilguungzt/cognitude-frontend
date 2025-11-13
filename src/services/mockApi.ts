@@ -18,6 +18,8 @@ import type {
   AutopilotSavingsBreakdown,
   AutopilotCostComparison,
   AutofixStats,
+ Model,
+ CreateModelRequest,
 } from "../types/api";
 import {
   dashboardSummaryStatistics,
@@ -514,6 +516,23 @@ class MockCognitudeAPI {
 
   async getModels() {
     return [];
+  }
+
+  async createModel(model: CreateModelRequest): Promise<Model> {
+    console.log("Mock create model", model);
+    const now = new Date().toISOString();
+    return {
+      id: Math.floor(Math.random() * 10000) + 1000,
+      name: model.name,
+      version: model.version,
+      description: model.description,
+      features: model.features.map((f, i) => ({
+        ...f,
+        id: i + 1,
+      })),
+      created_at: now,
+      updated_at: now,
+    };
   }
 
   async getUsageAnalytics() {

@@ -188,6 +188,8 @@ export interface AlertChannelCreate {
   configuration: AlertChannelConfig;
 }
 
+export type CreateAlertChannelRequest = AlertChannelCreate;
+
 export interface AlertConfig {
   id?: number;
   organization_id?: number;
@@ -270,6 +272,17 @@ export interface Model {
   features: ModelFeature[];
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateModelRequest {
+  name: string;
+  version: string;
+  description?: string;
+  features: {
+    feature_name: string;
+    feature_type: "numeric" | "categorical";
+    order: number;
+  }[];
 }
 
 // ==================== Autopilot Types ====================

@@ -379,7 +379,7 @@ export default function AlertSettingsPage() {
                         <h3 className="text-lg font-semibold text-gray-900 capitalize">
                           {channel.channel_type}
                         </h3>
-                        {channel.is_active && (
+                        {channel.enabled && (
                           <span className="badge-success">Active</span>
                         )}
                       </div>
