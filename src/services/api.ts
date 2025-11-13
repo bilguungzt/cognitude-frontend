@@ -304,11 +304,11 @@ class CognitudeAPI {
 
   async uploadSchema(
     name: string,
-    schema: object
+    schema: { schema_data: object }
   ): Promise<{ message: string }> {
     const response = await this.client.post<{ message: string }>(
       "/api/schemas/upload",
-      { name, schema }
+      { name, ...schema }
     );
     return response.data;
   }
@@ -317,7 +317,7 @@ class CognitudeAPI {
 
   async getSchemaStats(): Promise<{ top_5_most_used: SchemaStat[] }> {
     const response = await this.client.get<{ top_5_most_used: SchemaStat[] }>(
-      "/schemas/stats"
+      "/api/v1/dashboard/schema-stats"
     );
     return response.data;
   }

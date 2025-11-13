@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { Button } from '../components/Button';
 import { Upload, AlertTriangle, CheckCircle, XCircle, FileJson } from 'lucide-react';
 import { api } from '../services/api';
@@ -50,7 +51,14 @@ const SchemaEnforcementPage: React.FC = () => {
       setLogs(logsRes);
       setTopSchemas(statsRes.top_5_most_used);
     } catch (err) {
-      setError(api.handleError(err));
+      if (err instanceof AxiosError && err.response && err.response.status === 404) {
+        // This is the "zero state" for a new user with no data.
+        setActiveSchemas([]);
+        setLogs([]);
+        setTopSchemas([]);
+      } else {
+        setError(api.handleError(err));
+      }
     } finally {
       setLoading(false);
     }

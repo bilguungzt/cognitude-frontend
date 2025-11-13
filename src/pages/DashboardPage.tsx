@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import { AxiosError } from "axios";
 import { AlertTriangle, Loader } from "lucide-react";
 import Layout from "../components/Layout";
 import { api } from "../services/api";
@@ -48,7 +49,46 @@ export default function DashboardPage() {
       const dashboardData = await api.getEnhancedDashboardData();
       setData(dashboardData);
     } catch (err) {
-      setError(api.handleError(err));
+      if (err instanceof AxiosError && err.response && err.response.status === 404) {
+        setData({
+          heroStats: {
+            couldHaveSpent: 0,
+            actuallySpent: 0,
+            totalSavings: 0,
+            projectedMonthlySavings: 0,
+          },
+          keyMetrics: [],
+          savingsOverTime: {
+            labels: [],
+            datasets: [
+              {
+                label: "Cumulative Savings",
+                data: [],
+                borderColor: "#4F46E5",
+                backgroundColor: "rgba(79, 70, 229, 0.1)",
+                fill: true,
+              },
+            ],
+          },
+          cacheVsFresh: {
+            labels: [],
+            datasets: [
+              { label: "Cached", data: [], backgroundColor: "#34D399" },
+              { label: "Fresh", data: [], backgroundColor: "#FBBF24" },
+            ],
+          },
+          bestOptimization: {
+            originalModel: "N/A",
+            selectedModel: "N/A",
+            savingsPerRequest: 0,
+            totalImpact: 0,
+            requestCount: 0,
+          },
+          activityFeed: [],
+        });
+      } else {
+        setError(api.handleError(err));
+      }
     } finally {
       setLoading(false);
     }

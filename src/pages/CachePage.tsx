@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AxiosError } from "axios";
 import {
   Database,
   Trash2,
@@ -37,7 +38,28 @@ export default function CachePage() {
       const data = await api.getCacheStats();
       setCacheStats(data);
     } catch (err) {
-      setError(api.handleError(err));
+      if (err instanceof AxiosError && err.response?.status === 404) {
+        setCacheStats({
+          redis: {
+            hits: 0,
+            misses: 0,
+            hit_rate: 0,
+            total_keys: 0,
+            memory_usage_mb: 0,
+          },
+          postgresql: {
+            total_cached_responses: 0,
+            cost_savings: 0,
+            oldest_cache_entry: new Date().toISOString(),
+          },
+          lifetime_savings: {
+            total_cost_saved: 0,
+            requests_served_from_cache: 0,
+          },
+        });
+      } else {
+        setError(api.handleError(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -87,25 +109,31 @@ export default function CachePage() {
     );
   }
 
-  if (!cacheStats) {
-    return (
-      <Layout>
-        <EmptyState
-          icon={Database}
-          title="No cache data available"
-          description="Cache statistics will appear once you start using the proxy"
-        />
-      </Layout>
-    );
+  // Definitive check for a valid data structure before proceeding to render.
+  // This handles initial null state, error states, and zero-states gracefully.
+  if (!cacheStats || !cacheStats.redis || !cacheStats.postgresql || !cacheStats.lifetime_savings) {
+      return (
+          <Layout>
+              <EmptyState
+                  icon={Database}
+                  title="No cache data available"
+                  description="Cache statistics will appear once you start using the proxy."
+                  action={{
+                      label: "Retry",
+                      onClick: loadCacheStats,
+                  }}
+              />
+          </Layout>
+      );
   }
 
-  const cacheHitRate = cacheStats.redis.hit_rate * 100;
+  const cacheHitRate = (cacheStats.redis.hit_rate || 0) * 100;
 
   return (
-    <Layout title="Cache Management">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
+      <Layout title="Cache Management">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {/* Page Header */}
+              <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">

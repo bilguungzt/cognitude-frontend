@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { CheckCircle, XCircle, AlertTriangle, Zap } from 'lucide-react';
 import { api } from '../services/api';
 import type {
@@ -63,7 +64,16 @@ const ResponseValidatorPage: React.FC = () => {
       setAutofixStats(autofixStatsRes);
       setTimeline(timelineRes);
     } catch (err) {
-      setError(api.handleError(err));
+      const axiosError = err as AxiosError;
+      if (axiosError.isAxiosError && axiosError.response?.status === 404) {
+        // Handle "zero state" for new users with no data
+        setStats({ success_rate: 0, failure_rate: 0, autofix_success_rate: 0 });
+        setIssueBreakdown({});
+        setAutofixStats({ retries: {}, average_retries: 0 });
+        setTimeline([]);
+      } else {
+        setError(api.handleError(err));
+      }
     } finally {
       setLoading(false);
     }

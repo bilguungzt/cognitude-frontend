@@ -190,7 +190,22 @@
 
   /* Input Components */
   .input {
-    @apply w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-neutral-400 disabled:bg-neutral-50 disabled:cursor-not-allowed hover:border-neutral-400;
+    @apply w-full px-4 py-3 bg-white border border-neutral-300 rounded-lg text-neutral-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-neutral-400 disabled:bg-neutral-50 disabled:cursor-not-allowed hover:border-neutral-400;
+    /* Explicit text and caret color in case Tailwind caret utilities are not enabled */
+    color: rgb(var(--text-primary));
+    caret-color: rgb(var(--color-primary-600));
+  }
+
+  /* High-specificity overrides for inputs inside cards or other containers that
+     may use text gradients (bg-clip-text / text-transparent). This forces
+     visible text and caret even if an ancestor applies text-transparent. */
+  .card .input,
+  input.input,
+  textarea.textarea {
+    color: rgb(var(--text-primary)) !important;
+    caret-color: rgb(var(--color-primary-600)) !important;
+    -webkit-text-fill-color: rgb(var(--text-primary)) !important;
+    /* override text-transparent on WebKit browsers */
   }
 
   .input-error {
@@ -353,7 +368,7 @@
   /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in-out;
- }
+  }
 
   .animate-slide-up {
     animation: slideUp 0.4s ease-out;
@@ -362,50 +377,50 @@
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out;
   }
-  
+
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  
- .animate-float {
+
+  .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-  
- .animate-bounce {
+
+  .animate-bounce {
     animation: bounce 1s infinite;
   }
-  
+
   .animate-ping {
     animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
-  
+
   /* Spacing utilities */
- .spacing-tight {
+  .spacing-tight {
     @apply space-y-2;
   }
-  
- .spacing-normal {
+
+  .spacing-normal {
     @apply space-y-4;
   }
-  
+
   .spacing-loose {
     @apply space-y-6;
   }
-  
+
   /* Hover animations */
   .hover-lift {
     transition: all 0.3s ease;
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
-  
+
   .hover-glow {
     transition: all 0.3s ease;
   }
-  
+
   .hover-glow:hover {
     box-shadow: 0 15px rgba(59, 130, 246, 0.3);
   }

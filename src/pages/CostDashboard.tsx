@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../services";
+import axios from "axios";
 import {
   LineChart,
   Line,
@@ -26,6 +27,13 @@ interface AnalyticsData {
   average_latency: number;
   usage_by_day: DailyUsage[];
 }
+
+const zeroStateData: AnalyticsData = {
+  total_requests: 0,
+  total_cost: 0,
+  average_latency: 0,
+  usage_by_day: [],
+};
 
 export default function CostDashboard() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
@@ -68,8 +76,13 @@ export default function CostDashboard() {
       console.log('Fetched analytics data:', data);
       setAnalyticsData(data);
     } catch (err) {
-      setError("Failed to load analytics data");
-      console.error("Error loading analytics:", err);
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        console.log('API returned 404, setting zero state data.');
+        setAnalyticsData(zeroStateData);
+      } else {
+        setError("Failed to load analytics data");
+        console.error("Error loading analytics:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -183,7 +196,7 @@ export default function CostDashboard() {
           <div className="flex items-center justify-center h-64">
             <div className="spinner h-12 w-12 border-indigo-600"></div>
           </div>
-        ) : analyticsData ? (
+        ) : analyticsData && analyticsData.total_requests > 0 ? (
           <div>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -356,7 +369,7 @@ export default function CostDashboard() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">No analytics data available</p>
+            <p className="text-gray-500">No analytics data available. This could be because there is no data for the selected date range or an error occurred.</p>
           </div>
         )}
       </main>

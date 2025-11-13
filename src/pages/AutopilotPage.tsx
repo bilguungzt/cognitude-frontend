@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
 import Layout from "../components/Layout";
 import { api } from "../services";
 import { DollarSign, Zap, Clock } from "lucide-react";
@@ -23,7 +24,44 @@ const AutopilotPage: React.FC = () => {
         const dashboardData = await api.getAutopilotDashboardData();
         setData(dashboardData);
       } catch (err) {
-        setError(api.handleError(err));
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          const zeroState: AutopilotDashboardData = {
+            heroStats: {
+              couldHaveSpent: 0,
+              actuallySpent: 0,
+              savings: 0,
+            },
+            keyMetrics: [
+              {
+                title: "Optimization Rate",
+                value: "0%",
+                comparison: "No data",
+              },
+              {
+                title: "Avg. Response Time",
+                value: "0ms",
+                comparison: "No data",
+              },
+              {
+                title: "Total Requests",
+                value: "0",
+                comparison: "No data",
+              },
+            ],
+            classificationBreakdown: {
+              labels: [],
+              datasets: [{ data: [], backgroundColor: [] }],
+            },
+            modelRouting: {
+              nodes: [],
+              links: [],
+            },
+            logs: [],
+          };
+          setData(zeroState);
+        } else {
+          setError(api.handleError(err));
+        }
       } finally {
         setLoading(false);
       }

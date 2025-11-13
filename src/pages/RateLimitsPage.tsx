@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AxiosError } from "axios";
 import {
   Shield,
   Save,
@@ -29,11 +30,13 @@ export default function RateLimitsPage() {
     requests_per_day: 10000,
   });
 
-  // Simulated current usage (in production, this would come from an API)
-  const [currentUsage] = useState({
-    minute: 45,
-    hour: 750,
-    day: 7500,
+  // Current usage (approx). In production this should come from a realtime
+  // monitoring endpoint. We try to derive approximate usage from analytics
+  // (daily requests) and fall back to simulated values for demo/local dev.
+  const [currentUsage, setCurrentUsage] = useState({
+    minute: 0,
+    hour: 0,
+    day: 0,
   });
 
   useEffect(() => {
@@ -47,8 +50,37 @@ export default function RateLimitsPage() {
       const data = await api.getRateLimitConfig();
       setConfig(data);
       setFormData(data);
+      // Try to fetch recent usage stats to show realistic current usage
+      try {
+        const usage = await api.getUsageStats();
+        // Prefer the most recent day's data if available
+        const daily = usage.daily_usage?.length
+          ? usage.daily_usage[usage.daily_usage.length - 1]
+          : null;
+        if (daily && typeof daily.requests === "number") {
+          const day = Math.round(daily.requests);
+          const hour = Math.round(day / 24);
+          const minute = Math.max(1, Math.round(hour / 60));
+          setCurrentUsage({ minute, hour, day });
+        }
+      } catch {
+        // ignore — keep fallback simulated values
+      }
     } catch (err) {
-      setError(api.handleError(err));
+      const error = err as Error | AxiosError;
+      if ("isAxiosError" in error && error.isAxiosError && error.response?.status === 404) {
+        const zeroState: RateLimitConfig = {
+          organization_id: 0,
+          requests_per_minute: 0,
+          requests_per_hour: 0,
+          requests_per_day: 0,
+          enabled: false,
+        };
+        setConfig(zeroState);
+        setFormData(zeroState);
+      } else {
+        setError(api.handleError(error));
+      }
     } finally {
       setLoading(false);
     }
@@ -117,9 +149,7 @@ export default function RateLimitsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Rate Limits
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Rate Limits</h2>
           <p className="text-gray-600">
             Configure API rate limits to protect your infrastructure and control
             costs
@@ -288,6 +318,72 @@ export default function RateLimitsPage() {
           )}
         </div>
 
+        {/* Recommended Limits Card */}
+        <div className="card mb-8">
+          <h3 className="text-lg font-semibold text-purple-900 mb-2">
+            Recommended Starting Points
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            Not sure where to start? Click a preset to populate the form.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  requests_per_minute: 60,
+                  requests_per_hour: 1000,
+                  requests_per_day: 10000,
+                })
+              }
+            >
+              <p className="text-sm text-purple-700 font-medium mb-1">
+                Small Team
+              </p>
+              <p className="text-xs text-purple-600">
+                60/min • 1,000/hr • 10,000/day
+              </p>
+            </div>
+            <div
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  requests_per_minute: 300,
+                  requests_per_hour: 10000,
+                  requests_per_day: 100000,
+                })
+              }
+            >
+              <p className="text-sm text-purple-700 font-medium mb-1">
+                Medium Team
+              </p>
+              <p className="text-xs text-purple-600">
+                300/min • 10,000/hr • 100,000/day
+              </p>
+            </div>
+            <div
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  requests_per_minute: 1000,
+                  requests_per_hour: 50000,
+                  requests_per_day: 500000,
+                })
+              }
+            >
+              <p className="text-sm text-purple-700 font-medium mb-1">
+                Enterprise
+              </p>
+              <p className="text-xs text-purple-600">
+                1,000/min • 50,000/hr • 500,000/day
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Configuration Form */}
         <div className="card mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
@@ -435,7 +531,7 @@ export default function RateLimitsPage() {
         </div>
 
         {/* Info Card */}
-        <div className="card mb-8">
+        <div className="card">
           <h3 className="text-lg font-semibold text-blue-900 mb-2">
             How Rate Limiting Works
           </h3>
@@ -469,39 +565,6 @@ export default function RateLimitsPage() {
               </span>
             </li>
           </ul>
-        </div>
-
-        {/* Recommended Limits Card */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-purple-900 mb-6">
-            Recommended Starting Points
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-purple-700 font-medium mb-1">
-                Small Team
-              </p>
-              <p className="text-xs text-purple-600">
-                60/min • 1,000/hr • 10,000/day
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-purple-700 font-medium mb-1">
-                Medium Team
-              </p>
-              <p className="text-xs text-purple-600">
-                300/min • 10,000/hr • 100,000/day
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-purple-700 font-medium mb-1">
-                Enterprise
-              </p>
-              <p className="text-xs text-purple-600">
-                1,000/min • 50,000/hr • 500,000/day
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </Layout>

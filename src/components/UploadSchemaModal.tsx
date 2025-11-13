@@ -32,7 +32,7 @@ export const UploadSchemaModal: React.FC<UploadSchemaModalProps> = ({ isOpen, on
     setIsUploading(true);
 
     try {
-      await api.uploadSchema(schemaName, JSON.parse(schemaContent));
+      await api.uploadSchema(schemaName, { schema_data: JSON.parse(schemaContent) });
       onSchemaUploaded();
       onClose();
     } catch (err) {

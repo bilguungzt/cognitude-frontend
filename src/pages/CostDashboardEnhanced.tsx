@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../services";
+import axios from "axios";
 import type {
   UsageStats,
   DailyUsage,
@@ -78,27 +79,49 @@ export default function CostDashboardEnhanced() {
 
       try {
         setError("");
-        const data = await api.getUsageStats({
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-          group_by: "day",
-        });
+        const [data, savingsBreakdown, costComparison] = await Promise.all([
+          api.getUsageStats({
+            start_date: dateRange.start,
+            end_date: dateRange.end,
+            group_by: "day",
+          }),
+          api.getAutopilotSavingsBreakdown({
+            start_date: dateRange.start,
+            end_date: dateRange.end,
+          }),
+          api.getAutopilotCostComparison({
+            start_date: dateRange.start,
+            end_date: dateRange.end,
+          }),
+        ]);
         setAnalyticsData(data);
-
-        const savingsBreakdown = await api.getAutopilotSavingsBreakdown({
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-        });
         setAutopilotSavingsBreakdown(savingsBreakdown);
-
-        const costComparison = await api.getAutopilotCostComparison({
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-        });
         setAutopilotCostComparison(costComparison);
-      } catch (err) {
-        setError("Failed to load analytics data");
+      } catch (err: unknown) {
         console.error("Error loading analytics:", err);
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          // Handle 404 as a "zero state" for all data
+          setAnalyticsData({
+            total_requests: 0,
+            total_cost: 0,
+            cache_hits: 0,
+            cache_hit_rate: 0,
+            cost_savings: 0,
+            breakdown: [],
+            daily_usage: [],
+          });
+          setAutopilotSavingsBreakdown({});
+          setAutopilotCostComparison({
+            could_have_spent: 0,
+            actually_spent: 0,
+            savings: 0,
+          });
+        } else {
+          setError("Failed to load analytics data");
+          setAnalyticsData(null);
+          setAutopilotSavingsBreakdown(null);
+          setAutopilotCostComparison(null);
+        }
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -158,13 +181,16 @@ export default function CostDashboardEnhanced() {
   };
 
   // Calculate trends
-  const costTrend = analyticsData?.daily_usage.length
-    ? (((analyticsData.daily_usage[analyticsData.daily_usage.length - 1]
-        ?.cost || 0) -
-        (analyticsData.daily_usage[0]?.cost || 0)) /
-        (analyticsData.daily_usage[0]?.cost || 1)) *
-      100
-    : 0;
+  const costTrend =
+    analyticsData &&
+    analyticsData.daily_usage &&
+    analyticsData.daily_usage.length > 0
+      ? (((analyticsData.daily_usage[analyticsData.daily_usage.length - 1]
+          ?.cost || 0) -
+          (analyticsData.daily_usage[0]?.cost || 0)) /
+          (analyticsData.daily_usage[0]?.cost || 1)) *
+        100
+      : 0;
 
   const avgCostPerRequest = analyticsData
     ? analyticsData.total_cost / (analyticsData.total_requests || 1)
@@ -351,7 +377,9 @@ export default function CostDashboardEnhanced() {
             </div>
 
             {/* Charts */}
-            {analyticsData.daily_usage.length > 0 ? (
+            {analyticsData &&
+            analyticsData.daily_usage &&
+            analyticsData.daily_usage.length > 0 ? (
               <>
                 {/* Cost Trend Chart */}
                 <div className="card mb-8">
