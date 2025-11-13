@@ -28,7 +28,7 @@ import {
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
-import ReconciliationCard from "../components/ReconciliationCard";
+import CostReconciliationCard from "../components/Dashboard/CostReconciliationCard";
 
 export default function CostDashboardEnhanced() {
   const [analyticsData, setAnalyticsData] = useState<UsageStats | null>(null);
@@ -192,20 +192,22 @@ export default function CostDashboardEnhanced() {
 
   return (
     <Layout title="Cost Analytics & Usage">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Cost Analytics
-          </h2>
-          <p className="text-gray-600">
-            Monitor your API usage and spending trends
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Cost Analytics
+            </h2>
+            <p className="text-gray-600">
+              Monitor your API usage and spending trends
+            </p>
+          </div>
         </div>
 
         {/* Date Range Controls */}
         <div className="card mb-8">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 <Calendar className="w-5 h-5 inline mr-2" />
@@ -257,11 +259,11 @@ export default function CostDashboardEnhanced() {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto mt-4 xl:mt-0">
               <button
                 onClick={() => loadAnalyticsData(true)}
                 disabled={refreshing}
-                className="btn-outline"
+                className="btn-outline w-full md:w-auto"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -271,7 +273,7 @@ export default function CostDashboardEnhanced() {
               <button
                 onClick={exportToCSV}
                 disabled={!analyticsData?.daily_usage.length}
-                className="btn-primary"
+                className="btn-primary w-full md:w-auto"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
@@ -290,7 +292,7 @@ export default function CostDashboardEnhanced() {
         {analyticsData ? (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               <div className="card hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-12 h-12 bg-success-100 rounded-xl flex items-center justify-center">
@@ -486,7 +488,7 @@ export default function CostDashboardEnhanced() {
 
                 {/* Reconciliation / Autopilot Sections */}
                 <div className="mb-8">
-                  <ReconciliationCard />
+                  <CostReconciliationCard />
                 </div>
 
                 {autopilotSavingsBreakdown && (
@@ -503,31 +505,16 @@ export default function CostDashboardEnhanced() {
                     Daily Usage Breakdown
                   </h3>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date
-                          </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Requests
-                          </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Cost
-                          </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Cost/Request
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {analyticsData.daily_usage.map(
-                          (day: DailyUsage, index: number) => (
-                            <tr
-                              key={index}
-                              className="hover:bg-gray-50 transition-colors"
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {/* Mobile View - Stacked Layout */}
+                    <div className="sm:hidden space-y-3">
+                      {analyticsData.daily_usage.map(
+                        (day: DailyUsage, index: number) => (
+                          <div
+                            key={index}
+                            className="p-4 bg-white rounded-lg shadow-sm border border-gray-100"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-sm font-medium text-gray-900">
                                 {new Date(day.date).toLocaleDateString(
                                   "en-US",
                                   {
@@ -536,21 +523,75 @@ export default function CostDashboardEnhanced() {
                                     year: "numeric",
                                   }
                                 )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                                {day.requests.toLocaleString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right font-medium">
+                              </div>
+                              <div className="text-sm font-semibold text-gray-900">
                                 {formatCurrency(day.cost)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                                {formatCurrency(day.cost / day.requests)}
-                              </td>
-                            </tr>
-                          )
-                        )}
-                      </tbody>
-                    </table>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                              <div>
+                                <span className="font-medium">Requests:</span> {day.requests.toLocaleString()}
+                              </div>
+                              <div>
+                                <span className="font-medium">Cost/Request:</span> {formatCurrency(day.cost / day.requests)}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                    
+                    {/* Desktop View - Table */}
+                    <div className="hidden sm:block">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Requests
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Cost
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Cost/Request
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {analyticsData.daily_usage.map(
+                            (day: DailyUsage, index: number) => (
+                              <tr
+                                key={index}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {new Date(day.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    }
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                  {day.requests.toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right font-medium">
+                                  {formatCurrency(day.cost)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                  {formatCurrency(day.cost / day.requests)}
+                                </td>
+                              </tr>
+                            )
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </>

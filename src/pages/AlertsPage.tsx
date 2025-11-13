@@ -138,7 +138,7 @@ export default function AlertsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Alert Configuration
@@ -149,7 +149,7 @@ export default function AlertsPage() {
             </div>
             <button
               onClick={() => setIsChannelModalOpen(true)}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center gap-2 mt-4 sm:mt-0"
             >
               <Plus className="w-4 h-4" />
               Add Channel
@@ -168,7 +168,7 @@ export default function AlertsPage() {
         {/* Alert Status Card */}
         {config && (
           <div className="card mb-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
               <div className="flex items-center gap-3">
                 <div
                   className={`p-3 rounded-lg ${
@@ -190,7 +190,7 @@ export default function AlertsPage() {
               </div>
               <button
                 onClick={() => setIsConfigModalOpen(true)}
-                className="btn-secondary flex items-center gap-2"
+                className="btn-secondary flex items-center gap-2 mt-4 sm:mt-0"
               >
                 <Edit2 className="w-4 h-4" />
                 Configure
@@ -216,7 +216,7 @@ export default function AlertsPage() {
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {channels.map((channel) => (
                 <div
                   key={channel.id}
@@ -280,7 +280,7 @@ export default function AlertsPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-6">
               Current Thresholds
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">
                   Daily Cost Threshold

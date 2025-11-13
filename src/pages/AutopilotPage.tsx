@@ -132,7 +132,7 @@ const AutopilotPage: React.FC = () => {
           {/* Key Metrics */}
           <motion.div
             variants={itemVariants}
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           >
             {data.keyMetrics.map((metric, index) => {
               const icons = {
@@ -157,7 +157,7 @@ const AutopilotPage: React.FC = () => {
           {/* Charts */}
           <motion.div
             variants={itemVariants}
-            className="grid gap-4 md:grid-cols-1 lg:grid-cols-2"
+            className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2"
           >
             <ClassificationChart
               data={data.classificationBreakdown.labels.reduce(
@@ -180,69 +180,89 @@ const AutopilotPage: React.FC = () => {
                 Real-time Logs
               </h2>
               <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  {/* --- HEADER --- */}
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Timestamp
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Original Model
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Selected Model
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Reason
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Cost Saved
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Speed Improv.
-                      </th>
-                    </tr>
-                  </thead>
-
-                  {/* --- BODY --- */}
-                  <tbody>
-                    {data.logs.map((log, index) => (
-                      <tr
-                        key={index}
-                        className="border-b border-gray-200 hover:bg-gray-50"
-                      >
-                        {/* Timestamp */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </td>
-
-                        {/* Models (Slightly lighter text) */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                          {log.original_model}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                          {log.selected_model}
-                        </td>
-
-                        {/* Reason (Allows wrapping) */}
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {log.reason}
-                        </td>
-
-                        {/* Cost Saved */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                          ${log.cost_saved.toFixed(4)}
-                        </td>
-
-                        {/* Speed Improv. */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-semibold">
-                          {log.speed_improvement}ms
-                        </td>
+                {/* Mobile View */}
+                <div className="sm:hidden space-y-3">
+                  {data.logs.map((log, index) => (
+                    <div key={index} className="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-medium text-gray-900">{new Date(log.timestamp).toLocaleString()}</div>
+                        <div className="text-sm font-semibold text-green-600">${log.cost_saved.toFixed(4)}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div><span className="font-medium">Original:</span> {log.original_model}</div>
+                        <div><span className="font-medium">Selected:</span> {log.selected_model}</div>
+                        <div><span className="font-medium">Speed:</span> {log.speed_improvement}ms</div>
+                        <div className="col-span-2"><span className="font-medium">Reason:</span> {log.reason}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop View */}
+                <div className="hidden sm:block">
+                  <table className="min-w-full">
+                    {/* --- HEADER --- */}
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Timestamp
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Original Model
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Selected Model
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Reason
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Cost Saved
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Speed Improv.
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    {/* --- BODY --- */}
+                    <tbody>
+                      {data.logs.map((log, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
+                          {/* Timestamp */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </td>
+
+                          {/* Models (Slightly lighter text) */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                            {log.original_model}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                            {log.selected_model}
+                          </td>
+
+                          {/* Reason (Allows wrapping) */}
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {log.reason}
+                          </td>
+
+                          {/* Cost Saved */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                            ${log.cost_saved.toFixed(4)}
+                          </td>
+
+                          {/* Speed Improv. */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-semibold">
+                            {log.speed_improvement}ms
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </motion.div>

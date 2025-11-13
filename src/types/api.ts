@@ -124,6 +124,24 @@ export interface RecommendationsResponse {
   total_potential_savings: number;
 }
 
+// ==================== Reconciliation ====================
+
+export interface ReconciliationReport {
+  id: number;
+  start_date: string;
+  end_date: string;
+  internal_cost_usd: number;
+  external_cost_usd: number;
+  variance_usd: number;
+  variance_percent: number;
+  status: "OK" | "DISCREPANCY_FOUND" | "PENDING" | "ERROR";
+  created_at?: string;
+}
+
+export interface ReconciliationReportResponse {
+  reports: ReconciliationReport[];
+}
+
 // ==================== Cache Management ====================
 
 export interface RedisCacheStats {

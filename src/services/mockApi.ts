@@ -20,6 +20,7 @@ import type {
   AutofixStats,
  Model,
  CreateModelRequest,
+ ReconciliationReport,
 } from "../types/api";
 import {
   dashboardSummaryStatistics,
@@ -236,7 +237,7 @@ class MockCognitudeAPI {
     };
   }
 
-  async getReconciliationReports(_params?: Record<string, string>) {
+  async getReconciliationReports(_params?: Record<string, string>): Promise<{ reports: ReconciliationReport[] }> {
     // return a small set of mock reconciliation reports
     const makeDate = (daysAgo: number) => {
       const d = new Date();
@@ -244,30 +245,32 @@ class MockCognitudeAPI {
       return d.toISOString().split("T")[0];
     };
 
-    return [
-      {
-        id: 1,
-        start_date: makeDate(7),
-        end_date: makeDate(1),
-        internal_cost_usd: 123.45,
-        external_cost_usd: 123.00,
-        variance_usd: 0.45,
-        variance_percent: 0.36,
-        status: "OK",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        start_date: makeDate(14),
-        end_date: makeDate(8),
-        internal_cost_usd: 200.0,
-        external_cost_usd: 220.0,
-        variance_usd: -20.0,
-        variance_percent: -9.09,
-        status: "DISCREPANCY_FOUND",
-        created_at: new Date().toISOString(),
-      },
-    ];
+    return {
+      reports: [
+        {
+          id: 1,
+          start_date: makeDate(7),
+          end_date: makeDate(1),
+          internal_cost_usd: 123.45,
+          external_cost_usd: 123.00,
+          variance_usd: 0.45,
+          variance_percent: 0.36,
+          status: "OK",
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          start_date: makeDate(14),
+          end_date: makeDate(8),
+          internal_cost_usd: 200.0,
+          external_cost_usd: 220.0,
+          variance_usd: -20.0,
+          variance_percent: -9.09,
+          status: "DISCREPANCY_FOUND",
+          created_at: new Date().toISOString(),
+        },
+      ]
+    };
   }
 
   // Cache

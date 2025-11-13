@@ -39,7 +39,7 @@ const colorVariants = {
   },
 };
 
-const CountUp = ({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) => {
+export const CountUp = ({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) => {
   const count = useMotionValue(0);
   const rounded = useTransform(count, latest => Math.round(latest));
   const display = useTransform(rounded, (latest) => `${prefix}${latest.toLocaleString()}${suffix}`);
