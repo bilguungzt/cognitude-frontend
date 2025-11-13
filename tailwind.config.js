@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
- darkMode: 'class', // Enable dark mode with class strategy
   theme: {
     extend: {
       colors: {
@@ -82,20 +81,6 @@ export default {
           800: "#262626",
           900: "#171717",
           950: "#0a0a0a",
-        },
-        // Dark mode colors
-        dark: {
-          50: "#f8fafc",  // Lighter background
-          100: "#f1f5f9",  // Softer background
-          200: "#e2e8f0",  // Subtle borders
-          300: "#cbd5e1",  // Lighter borders
-          400: "#94a3b8",  // Medium contrast text
-          500: "#64748b",  // Standard text
-          600: "#475569",  // Darker text
-          700: "#334155",  // Emphasized text
-          800: "#1e293b",  // High contrast text
-          900: "#0f172a",  // Maximum contrast text
-          950: "#020617",  // Maximum contrast text (darkest)
         },
         // Alpha variants for opacity control
         alpha: {

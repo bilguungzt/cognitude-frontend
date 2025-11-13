@@ -84,7 +84,7 @@ export const EnhancedStatCard: React.FC<EnhancedStatCardProps> = ({
                   {title}
                 </div>
                 <motion.div
-                  className="mt-2 text-2xl font-bold text-white"
+                  className="mt-2 text-2xl font-bold text-gray-900"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}

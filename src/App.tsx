@@ -14,15 +14,13 @@ import DocsPage from "./pages/DocsPage";
 import CostDashboardEnhanced from "./pages/CostDashboardEnhanced";
 import ResponseValidatorPage from "./pages/ResponseValidatorPage";
 import SchemaEnforcementPage from "./pages/SchemaEnforcementPage";
-import { ThemeProvider } from "./contexts/ThemeProvider";
 
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <Routes>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
               <Route path="/login" element={<LoginPageEnhanced />} />
               <Route
                 path="/dashboard"
@@ -127,7 +125,6 @@ function App() {
             </Routes>
           </BrowserRouter>
         </ToastProvider>
-      </ThemeProvider>
     </AuthProvider>
   );
 }

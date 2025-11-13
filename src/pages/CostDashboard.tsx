@@ -110,7 +110,7 @@ export default function CostDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-md">
-                <DollarSign className="w-6 h-6 text-white" />
+                <DollarSign className="w-6 h-6 text-indigo-600" />
               </div>
               <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 Cost Dashboard
