@@ -7,7 +7,6 @@ import { UploadSchemaModal } from '../components/UploadSchemaModal';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
-import RetryAttemptsChart from '../components/Validator/RetryAttemptsChart';
 
 interface StatCardProps {
   title: string;
@@ -31,9 +30,9 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) 
 );
 
 const SchemaEnforcementPage: React.FC = () => {
-  const [schemas, setSchemas] = useState<SchemaStat[]>([]);
+  const [activeSchemas, setActiveSchemas] = useState<SchemaStat[]>([]);
+  const [topSchemas, setTopSchemas] = useState<SchemaStat[]>([]);
   const [logs, setLogs] = useState<ValidationLog[]>([]);
-  // const [retryData, setRetryData] = useState<RetryAttemptsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,14 +41,14 @@ const SchemaEnforcementPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [schemasRes, logsRes] = await Promise.all([
+      const [schemasRes, logsRes, statsRes] = await Promise.all([
         api.getActiveSchemas(),
         api.getFailedValidationLogs(),
-        // api.getRetryAttemptsData(),
+        api.getSchemaStats(),
       ]);
-      setSchemas(schemasRes);
+      setActiveSchemas(schemasRes);
       setLogs(logsRes);
-      // setRetryData(retryRes);
+      setTopSchemas(statsRes.top_5_most_used);
     } catch (err) {
       setError(api.handleError(err));
     } finally {
@@ -61,9 +60,9 @@ const SchemaEnforcementPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const totalFailures = schemas.reduce((acc, schema) => acc + (schema.total_attempts * (1 - schema.failure_rate)), 0);
-  const overallSuccessRate = schemas.length > 0
-    ? (schemas.reduce((acc, schema) => acc + schema.failure_rate, 0) / schemas.length) * 100
+  const totalFailures = activeSchemas.reduce((acc, schema) => acc + (schema.total_attempts * (1 - schema.failure_rate)), 0);
+  const overallSuccessRate = activeSchemas.length > 0
+    ? (activeSchemas.reduce((acc, schema) => acc + schema.failure_rate, 0) / activeSchemas.length) * 100
     : 100;
 
   if (loading) {
@@ -108,7 +107,7 @@ const SchemaEnforcementPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <StatCard title="Total Schemas" value={schemas.length} icon={FileJson} color="purple" />
+            <StatCard title="Active Schemas" value={activeSchemas.length} icon={FileJson} color="purple" />
             <StatCard title="Overall Success Rate" value={`${overallSuccessRate.toFixed(1)}%`} icon={CheckCircle} color="green" />
             <StatCard title="Total Failures (24h)" value={totalFailures} icon={XCircle} color="red" />
         </div>
@@ -116,23 +115,23 @@ const SchemaEnforcementPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Schemas</h3>
-            {schemas.length > 0 ? (
+            {activeSchemas.length > 0 ? (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schema Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Attempts</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Failure Rate</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Retries</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {schemas.map((schema) => (
+                  {activeSchemas.map((schema) => (
                     <tr key={schema.schema_name}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{schema.schema_name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{schema.total_attempts}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(schema.failure_rate * 100).toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-now-rap text-sm text-gray-500">{schema.avg_retries.toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{schema.avg_retries.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -142,29 +141,46 @@ const SchemaEnforcementPage: React.FC = () => {
             )}
           </div>
           <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Retry Attempts</h3>
-            {schemas.length > 0 ? (
-              <RetryAttemptsChart data={schemas.reduce((acc, schema) => ({ ...acc, [schema.schema_name]: schema.avg_retries }), {})} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top 5 Most Used Schemas</h3>
+            {topSchemas.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schema Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Attempts</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Failure Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {topSchemas.map((schema) => (
+                    <tr key={schema.schema_name}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{schema.schema_name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{schema.total_attempts}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(schema.failure_rate * 100).toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
-              <p className="text-sm text-gray-500">No retry data available.</p>
+              <p className="text-sm text-gray-500">No schema statistics available.</p>
             )}
           </div>
         </div>
 
         <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Failed Validation Logs</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Failed Validation Logs (Last 24h)</h3>
             {logs.length > 0 ? (
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error Details</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {logs.map((log) => (
                     <tr key={log.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.request_id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 font-mono text-xs">{log.request_id}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">{log.error_details}</td>
                     </tr>
                   ))}
