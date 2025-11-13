@@ -15,7 +15,8 @@ import {
   Book,
   LogOut,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -37,8 +38,15 @@ const navigation = [
 
 export default function Layout({ children, title }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+ const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -79,7 +87,10 @@ export default function Layout({ children, title }: LayoutProps) {
 
           {/* Bottom Actions */}
           <div className="border-t border-gray-200 p-3 space-y-1">
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+            >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>
             </button>
@@ -127,7 +138,10 @@ export default function Layout({ children, title }: LayoutProps) {
 
               {/* Bottom Actions */}
               <div className="border-t border-gray-200 p-3 space-y-1">
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                >
                   <LogOut className="w-5 h-5" />
                   <span>Logout</span>
                 </button>

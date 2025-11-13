@@ -67,7 +67,6 @@ export default function AlertSettingsPage() {
             : { webhook_url: webhookUrl.trim() },
       };
 
-      console.log("Creating alert channel:", channelData);
       await api.createAlertChannel(channelData);
 
       // Reset form

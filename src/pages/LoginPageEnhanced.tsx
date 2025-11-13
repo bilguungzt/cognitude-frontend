@@ -27,8 +27,6 @@ export default function LoginPageEnhanced() {
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    debugger;
-    console.log("handleLogin called");
     if (!apiKey.trim()) {
       setError("Please enter your API key");
       return;
