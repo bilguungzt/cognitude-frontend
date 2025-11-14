@@ -9,7 +9,7 @@ export interface Organization {
 
 // ==================== Provider Management ====================
 
-export type ProviderType = 'openai' | 'anthropic' | 'mistral' | 'groq';
+export type ProviderType = 'openai' | 'anthropic' | 'mistral' | 'groq' | 'google';
 
 export interface Provider {
   id: number;

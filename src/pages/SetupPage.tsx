@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 // navigate not needed in this page; Layout handles navigation
 import Layout from "../components/Layout";
+import { api } from "../services";
 
 type ProviderType = "OpenAI" | "Anthropic" | "Mistral" | "Google AI" | "Cohere";
 type IntegrationOption = "python" | "nodejs" | "curl" | "rest";
@@ -15,7 +16,7 @@ export default function SetupPage() {
   const [monthlyBudget, setMonthlyBudget] = useState<string>("500.00");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">("High");
   const [testProvider, setTestProvider] = useState<ProviderType>("OpenAI");
-  const [testModel, setTestModel] = useState<string>("gpt-3.5-turbo");
+  const [testModel, setTestModel] = useState<string>("gpt-3.5-turbo-0125");
   const [testMessage, setTestMessage] = useState<string>(
     "Hello! This is a test from Cognitude."
   );
@@ -27,6 +28,9 @@ export default function SetupPage() {
   const [copied, setCopied] = useState<string>("");
   const [selectedIntegration, setSelectedIntegration] =
     useState<IntegrationOption>("python");
+  const [providerTestLoading, setProviderTestLoading] = useState<boolean>(false);
+  const [providerTestResult, setProviderTestResult] = useState<string>("");
+  const [providerSaveLoading, setProviderSaveLoading] = useState<boolean>(false);
   // logout and navigate hooks are provided by Layout; not used directly in this page
 
   const handleCopy = (text: string, label: string) => {
@@ -46,6 +50,78 @@ export default function SetupPage() {
       );
       setTestLoading(false);
     }, 2000);
+  };
+
+  const handleTestProviderConnection = async () => {
+    if (!providerApiKey.trim()) {
+      setProviderTestResult("❌ Please enter an API key first");
+      return;
+    }
+
+    setProviderTestLoading(true);
+    setProviderTestResult("⏳ Testing connection...");
+
+    try {
+      // Map frontend provider names to backend names
+      const providerMap: Record<ProviderType, string> = {
+        "OpenAI": "openai",
+        "Anthropic": "anthropic", 
+        "Mistral": "mistral",
+        "Google AI": "google",
+        "Cohere": "cohere"
+      };
+
+      const backendProvider = providerMap[selectedProvider];
+      
+      const result = await (api as any).testProvider({
+        provider: backendProvider,
+        api_key: providerApiKey,
+        enabled: true,
+        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3
+      });
+
+      setProviderTestResult(`✅ ${result.message}\nProvider: ${result.provider}\nModel: ${result.model}\nResponse: ${result.response}`);
+    } catch (error: any) {
+      setProviderTestResult(`❌ Connection failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setProviderTestLoading(false);
+    }
+  };
+
+  const handleSaveProvider = async () => {
+    if (!providerApiKey.trim()) {
+      alert("Please enter an API key first");
+      return;
+    }
+
+    setProviderSaveLoading(true);
+
+    try {
+      // Map frontend provider names to backend names
+      const providerMap: Record<ProviderType, string> = {
+        "OpenAI": "openai",
+        "Anthropic": "anthropic",
+        "Mistral": "mistral", 
+        "Google AI": "google",
+        "Cohere": "cohere"
+      };
+
+      const backendProvider = providerMap[selectedProvider];
+      
+      await api.createProvider({
+        provider: backendProvider as any,
+        api_key: providerApiKey,
+        enabled: true,
+        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3
+      });
+
+      alert("Provider saved successfully!");
+      setProviderApiKey(""); // Clear the form
+    } catch (error: any) {
+      alert(`Failed to save provider: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setProviderSaveLoading(false);
+    }
   };
 
   // Layout provides logout button; local logout function removed to avoid unused variable warning.
@@ -72,7 +148,7 @@ client = OpenAI(
 
 # Use exactly as before - no other changes needed!
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="gpt-4-0125-preview",
     messages=[
         {"role": "user", "content": "Hello, world!"}
     ]
@@ -90,7 +166,7 @@ client = da.OpenAI(api_key="sk-proj-...")
 
 # Use exactly like OpenAI SDK
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="gpt-4-0125-preview",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -135,7 +211,7 @@ const client = new OpenAI({
 
 // Use exactly as before
 const response = await client.chat.completions.create({
-  model: 'gpt-4',
+  model: 'gpt-4-0125-preview',
   messages: [{ role: 'user', content: 'Hello!' }]
 });
 
@@ -152,7 +228,7 @@ const da = new Cognitude({ apiKey: '${cognitudeApiKey.substring(
 const client = da.createOpenAI({ apiKey: 'sk-proj-...' });
 
 const response = await client.chat.completions.create({
-  model: 'gpt-4',
+  model: 'gpt-4-0125-preview',
   messages: [{ role: 'user', content: 'Hello!' }]
 });
 
@@ -166,7 +242,7 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
   -H "X-API-Key: ${cognitudeApiKey.substring(0, 8)}••••••••" \\
   -H "Authorization: Bearer sk-proj-..." \\
   -d '{
-    "model": "gpt-4",
+    "model": "gpt-4-0125-preview",
     "messages": [
       {"role": "user", "content": "Hello!"}
     ],
@@ -182,7 +258,7 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
     "Content-Type": "application/json"
   },
   "body": {
-    "model": "gpt-4",
+    "model": "gpt-4-0125-preview",
     "messages": [
       {"role": "user", "content": "Hello!"}
     ],
@@ -351,13 +427,31 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
             </div>
 
             <div className="flex gap-3">
-              <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                ✓ Test Connection
+              <button 
+                onClick={handleTestProviderConnection}
+                disabled={providerTestLoading}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {providerTestLoading ? "Testing..." : "✓ Test Connection"}
               </button>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Save Provider
+              <button 
+                onClick={handleSaveProvider}
+                disabled={providerSaveLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {providerSaveLoading ? "Saving..." : "Save Provider"}
               </button>
             </div>
+
+            {providerTestResult && (
+              <div className="mt-4 p-4 bg-bg-secondary border border-border-primary rounded-lg">
+                <p className={`whitespace-pre-line ${
+                  providerTestResult.includes("✅") ? "text-success-600" : "text-error-600"
+                }`}>
+                  {providerTestResult}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -668,7 +762,7 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
                 value={testModel}
                 onChange={(e) => setTestModel(e.target.value)}
                 className="w-full px-3 py-2 border border-border-secondary rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., gpt-3.5-turbo"
+                placeholder="e.g., gpt-3.5-turbo-0125"
               />
             </div>
 
@@ -1219,14 +1313,14 @@ response2 = client.chat.completions.create(
                 <pre className="bg-gray-900 text-gray-100 rounded-lg p-3 text-sm overflow-x-auto">
                   <code>{`# Good - will be cached
 response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
+    model="gpt-3.5-turbo-0125",
     messages=[{"role": "user", "content": "Classify: ..."}],
     temperature=0 # ← Deterministic
 )
 
 # Bad - won't be cached
 response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
+    model="gpt-3.5-turbo-0125",
     messages=[{"role": "user", "content": "Classify: ..."}],
     temperature=0.7 # ← Random, can't cache
 )`}</code>
@@ -1249,14 +1343,14 @@ response = client.chat.completions.create(
                 <pre className="bg-gray-900 text-gray-100 rounded-lg p-3 text-sm overflow-x-auto">
                   <code>{`# Track by end-user
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="gpt-4-0125-preview",
     messages=[...],
     user="user_abc123" # ← OpenAI native field
 )
 
 # Or use custom metadata (Cognitude SDK)
 response = da.chat.completions.create(
-    model="gpt-4",
+    model="gpt-4-0125-preview",
     messages=[...],
     metadata={
         "feature": "email_assistant",

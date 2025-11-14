@@ -139,6 +139,23 @@ class CognitudeAPI {
     return response.data;
   }
 
+  async testProvider(provider: ProviderCreate): Promise<{
+    success: boolean;
+    message: string;
+    provider: string;
+    model: string;
+    response: string;
+  }> {
+    const response = await this.client.post<{
+      success: boolean;
+      message: string;
+      provider: string;
+      model: string;
+      response: string;
+    }>("/providers/test", provider);
+    return response.data;
+  }
+
   // ==================== Chat Completions ====================
 
   async chatCompletion(
