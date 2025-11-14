@@ -21,110 +21,110 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginPageEnhanced />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/autopilot"
-              element={
-                <ProtectedRoute>
-                  <AutopilotPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/providers"
-              element={
-                <ProtectedRoute>
-                  <ProvidersPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cost"
-              element={
-                <ProtectedRoute>
-                  <CostDashboardEnhanced />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cost-analytics"
-              element={
-                <ProtectedRoute>
-                  <CostDashboardEnhanced />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/validator"
-              element={
-                <ProtectedRoute>
-                  <ResponseValidatorPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/schemas"
-              element={
-                <ProtectedRoute>
-                  <SchemaEnforcementPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cache"
-              element={
-                <ProtectedRoute>
-                  <CachePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/alerts"
-              element={
-                <ProtectedRoute>
-                  <AlertsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rate-limits"
-              element={
-                <ProtectedRoute>
-                  <RateLimitsPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route path="/login" element={<LoginPageEnhanced />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/autopilot"
+                element={
+                  <ProtectedRoute>
+                    <AutopilotPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/providers"
+                element={
+                  <ProtectedRoute>
+                    <ProvidersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cost"
+                element={
+                  <ProtectedRoute>
+                    <CostDashboardEnhanced />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cost-analytics"
+                element={
+                  <ProtectedRoute>
+                    <CostDashboardEnhanced />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/validator"
+                element={
+                  <ProtectedRoute>
+                    <ResponseValidatorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/schemas"
+                element={
+                  <ProtectedRoute>
+                    <SchemaEnforcementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cache"
+                element={
+                  <ProtectedRoute>
+                    <CachePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alerts"
+                element={
+                  <ProtectedRoute>
+                    <AlertsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rate-limits"
+                element={
+                  <ProtectedRoute>
+                    <RateLimitsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/setup"
-              element={
-                <ProtectedRoute>
-                  <SetupPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/docs"
-              element={
-                <ProtectedRoute>
-                  <DocsPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/setup"
+                element={
+                  <ProtectedRoute>
+                    <SetupPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/docs"
+                element={
+                  <ProtectedRoute>
+                    <DocsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
     </AuthProvider>
   );
 }
