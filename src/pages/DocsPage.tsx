@@ -53,7 +53,7 @@ export default function DocsPage() {
                 Ensure you always get valid JSON responses.
               </p>
               <a
-                href="https://api.cognitude.com/docs"
+                href="https://api.cognitude.io/docs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-ghost text-sm inline-flex items-center gap-1"
@@ -85,7 +85,7 @@ export default function DocsPage() {
         <div className="flex-1">
           <div className="card">
             <iframe
-              src="https://api.cognitude.com/redoc"
+              src="https://api.cognitude.io/redoc"
               className="w-full"
               title="Cognitude API Documentation"
               style={{ height: "800px" }}

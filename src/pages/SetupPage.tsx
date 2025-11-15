@@ -154,7 +154,7 @@ export default function SetupPage() {
 
 client = OpenAI(
     api_key="sk-proj-...", # Your OpenAI key
-    base_url="https://api.cognitude.com/v1", # ← Add this line
+    base_url="https://api.cognitude.io/v1", # ← Add this line
     default_headers={"X-API-Key": "${cognitudeApiKey.substring(
       0,
       8
@@ -215,7 +215,7 @@ print(f"Saved: \${response.savings_usd:.4f} vs GPT-4")`,
 
 const client = new OpenAI({
   apiKey: 'sk-proj-...', // Your OpenAI key
-  baseURL: 'https://api.cognitude.com/v1', // ← Add this
+  baseURL: 'https://api.cognitude.io/v1', // ← Add this
   defaultHeaders: {
     'X-API-Key': '${cognitudeApiKey.substring(
       0,
@@ -252,7 +252,7 @@ const savings = await da.getSavings();
 console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
   };
 
-  const curlExample = `curl -X POST https://api.cognitude.com/v1/chat/completions \\
+  const curlExample = `curl -X POST https://api.cognitude.io/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${cognitudeApiKey.substring(0, 8)}••••••••" \\
   -H "Authorization: Bearer sk-proj-..." \\
@@ -265,7 +265,7 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
   }'`;
 
   const restExample = `{
-  "url": "https://api.cognitude.com/v1/chat/completions",
+  "url": "https://api.cognitude.io/v1/chat/completions",
   "method": "POST",
   "headers": {
     "Authorization": "Bearer sk-proj-...",
@@ -1132,7 +1132,7 @@ response2 = client.chat.completions.create(
                 <li>✓ Ensure X-API-Key header is included in every request</li>
                 <li>
                   ✓ Verify you're using the production API URL:
-                  https://api.cognitude.com
+                  https://api.cognitude.io
                 </li>
                 <li>
                   ✓ API keys start with da_ - if not, regenerate in Settings
