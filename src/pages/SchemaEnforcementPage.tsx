@@ -6,14 +6,22 @@ import { api } from '../services/api';
 import type { SchemaStat, ValidationLog } from '../types/api';
 import { UploadSchemaModal } from '../components/UploadSchemaModal';
 import Layout from '../components/Layout';
-import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import Skeleton from '../components/Skeleton';
+
+type StatColor = 'purple' | 'green' | 'red';
+
+const statColorClasses: Record<StatColor, { bg: string; text: string }> = {
+  purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
+  green: { bg: 'bg-green-100', text: 'text-green-600' },
+  red: { bg: 'bg-red-100', text: 'text-red-600' },
+};
 
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: React.ElementType;
-  color: string;
+  color: StatColor;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) => (
@@ -23,8 +31,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) 
                 <p className="text-sm font-medium text-gray-600">{title}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
             </div>
-            <div className={`p-3 bg-${color}-100 rounded-full`}>
-                <Icon className={`w-6 h-6 text-${color}-600`} />
+            <div className={`p-3 rounded-full ${statColorClasses[color].bg}`}>
+                <Icon className={`w-6 h-6 ${statColorClasses[color].text}`} />
             </div>
         </div>
     </div>
@@ -68,16 +76,32 @@ const SchemaEnforcementPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const totalFailures = activeSchemas.reduce((acc, schema) => acc + (schema.total_attempts * (1 - schema.failure_rate)), 0);
-  const overallSuccessRate = activeSchemas.length > 0
-    ? (activeSchemas.reduce((acc, schema) => acc + schema.failure_rate, 0) / activeSchemas.length) * 100
-    : 100;
+  const totalFailures = activeSchemas.reduce(
+    (acc, schema) => acc + schema.total_attempts * schema.failure_rate,
+    0
+  );
+  const totalAttempts = activeSchemas.reduce(
+    (acc, schema) => acc + schema.total_attempts,
+    0
+  );
+  const overallSuccessRate =
+    totalAttempts > 0
+      ? (((totalAttempts - totalFailures) / totalAttempts) * 100)
+      : 100;
+  const roundedFailures = Math.round(totalFailures);
 
   if (loading) {
     return (
       <Layout title="Schema Enforcement">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <LoadingSpinner size="lg" text="Loading schema data..." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-32 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
         </div>
       </Layout>
     );
@@ -117,7 +141,7 @@ const SchemaEnforcementPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <StatCard title="Active Schemas" value={activeSchemas.length} icon={FileJson} color="purple" />
             <StatCard title="Overall Success Rate" value={`${overallSuccessRate.toFixed(1)}%`} icon={CheckCircle} color="green" />
-            <StatCard title="Total Failures (24h)" value={totalFailures} icon={XCircle} color="red" />
+            <StatCard title="Total Failures (24h)" value={roundedFailures} icon={XCircle} color="red" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

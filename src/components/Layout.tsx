@@ -1,40 +1,14 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Database,
-  Zap,
-  DollarSign,
-  AlertCircle,
-  Gauge,
-  Rocket,
-  Shield,
-  FileText,
-  Book,
-  LogOut,
-} from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { navRoutes } from "../routesConfig";
 
 interface LayoutProps {
   children: ReactNode;
   title?: string;
 }
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Providers", href: "/providers", icon: Database },
-  { name: "Cache", href: "/cache", icon: Zap },
-  { name: "Cost Analytics", href: "/cost", icon: DollarSign },
-  { name: "Alerts", href: "/alerts", icon: AlertCircle },
-  { name: "Rate Limits", href: "/rate-limits", icon: Gauge },
-  { name: "Autopilot", href: "/autopilot", icon: Rocket },
-  { name: "Validator", href: "/validator", icon: Shield },
-  { name: "Schemas", href: "/schemas", icon: FileText },
-  { name: "API Docs", href: "/docs", icon: Book },
-];
 
 export default function Layout({ children, title }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -66,20 +40,22 @@ export default function Layout({ children, title }: LayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+            {navRoutes.map((item) => {
+              const href = item.path;
+              const Icon = item.nav!.icon;
+              const isActive = location.pathname === href;
               return (
                 <Link
-                  key={item.name}
-                  to={item.href}
+                  key={href}
+                  to={href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <span>{item.name}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span>{item.nav!.label}</span>
                 </Link>
               );
             })}
@@ -116,12 +92,14 @@ export default function Layout({ children, title }: LayoutProps) {
 
               {/* Navigation */}
               <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
+                {navRoutes.map((item) => {
+                  const href = item.path;
+                  const Icon = item.nav!.icon;
+                  const isActive = location.pathname === href;
                   return (
                     <Link
-                      key={item.name}
-                      to={item.href}
+                      key={href}
+                      to={href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                         isActive
@@ -129,8 +107,8 @@ export default function Layout({ children, title }: LayoutProps) {
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      <span>{item.name}</span>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span>{item.nav!.label}</span>
                     </Link>
                   );
                 })}

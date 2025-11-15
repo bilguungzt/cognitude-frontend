@@ -1,20 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import Layout from "../components/Layout";
 import { api } from "../services";
-import { DollarSign, Zap, Clock } from "lucide-react";
+import { DollarSign, Zap, Clock, AlertTriangle } from "lucide-react";
 import HeroStats from "../components/Autopilot/HeroStats";
 import StatCard from "../components/Autopilot/StatCard";
 import ClassificationChart from "../components/Autopilot/ClassificationChart";
 import ModelRoutingChart from "../components/Autopilot/ModelRoutingChart";
 import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 import type { AutopilotDashboardData } from "../types/api";
 
 const AutopilotPage: React.FC = () => {
   const [data, setData] = useState<AutopilotDashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiUnavailable, setApiUnavailable] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,40 +27,8 @@ const AutopilotPage: React.FC = () => {
         setData(dashboardData);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
-          const zeroState: AutopilotDashboardData = {
-            heroStats: {
-              couldHaveSpent: 0,
-              actuallySpent: 0,
-              savings: 0,
-            },
-            keyMetrics: [
-              {
-                title: "Optimization Rate",
-                value: "0%",
-                comparison: "No data",
-              },
-              {
-                title: "Avg. Response Time",
-                value: "0ms",
-                comparison: "No data",
-              },
-              {
-                title: "Total Requests",
-                value: "0",
-                comparison: "No data",
-              },
-            ],
-            classificationBreakdown: {
-              labels: [],
-              datasets: [{ data: [], backgroundColor: [] }],
-            },
-            modelRouting: {
-              nodes: [],
-              links: [],
-            },
-            logs: [],
-          };
-          setData(zeroState);
+          setApiUnavailable(true);
+          setData(null);
         } else {
           setError(api.handleError(err));
         }
@@ -108,9 +78,28 @@ const AutopilotPage: React.FC = () => {
     </div>
   );
 
+  const classificationChartData = useMemo(() => {
+    if (!data) return {};
+    return data.classificationBreakdown.labels.reduce(
+      (acc, label, index) => {
+        acc[label] = data.classificationBreakdown.datasets[0].data[index];
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+  }, [data]);
+
+  const logs = useMemo(() => data?.logs ?? [], [data]);
+
   return (
     <Layout title="Autopilot Dashboard">
-      {loading ? (
+      {apiUnavailable ? (
+        <EmptyState
+          icon={AlertTriangle}
+          title="Autopilot reporting unavailable"
+          description="Autopilot analytics endpoints are not deployed in this environment yet. Once they go live, this dashboard will automatically populate."
+        />
+      ) : loading ? (
         renderSkeletons()
       ) : error ? (
         <div className="text-center text-red-500">
@@ -159,17 +148,8 @@ const AutopilotPage: React.FC = () => {
             variants={itemVariants}
             className="grid gap-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2"
           >
-            <ClassificationChart
-              data={data.classificationBreakdown.labels.reduce(
-                (acc, label, index) => {
-                  acc[label] =
-                    data.classificationBreakdown.datasets[0].data[index];
-                  return acc;
-                },
-                {} as { [key: string]: number }
-              )}
-            />
-            <ModelRoutingChart data={data.logs} />
+            <ClassificationChart data={classificationChartData} />
+            <ModelRoutingChart data={logs} />
           </motion.div>
 
           {/* Real-time Logs */}
@@ -182,7 +162,7 @@ const AutopilotPage: React.FC = () => {
               <div className="overflow-x-auto">
                 {/* Mobile View */}
                 <div className="sm:hidden space-y-3">
-                  {data.logs.map((log, index) => (
+                  {logs.map((log, index) => (
                     <div key={index} className="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-sm font-medium text-gray-900">{new Date(log.timestamp).toLocaleString()}</div>
@@ -226,7 +206,7 @@ const AutopilotPage: React.FC = () => {
 
                     {/* --- BODY --- */}
                     <tbody>
-                      {data.logs.map((log, index) => (
+                      {logs.map((log, index) => (
                         <tr
                           key={index}
                           className="border-b border-gray-200 hover:bg-gray-50"

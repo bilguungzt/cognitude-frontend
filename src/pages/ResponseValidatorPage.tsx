@@ -9,16 +9,24 @@ import type {
   ValidationTimelineEvent,
 } from '../types/api';
 import Layout from '../components/Layout';
-import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import IssueChart from '../components/Validator/IssueChart';
 import AutofixChart from '../components/Validator/AutofixChart';
+import Skeleton from '../components/Skeleton';
+
+type StatColor = 'green' | 'red' | 'blue';
+
+const validatorStatColors: Record<StatColor, { bg: string; text: string }> = {
+  green: { bg: 'bg-green-100', text: 'text-green-600' },
+  red: { bg: 'bg-red-100', text: 'text-red-600' },
+  blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+};
 
 interface StatCardProps {
   title: string;
   value: string;
   icon: React.ElementType;
-  color: string;
+  color: StatColor;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) => (
@@ -28,8 +36,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) 
                 <p className="text-sm font-medium text-gray-600">{title}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
             </div>
-            <div className={`p-3 bg-${color}-100 rounded-full`}>
-                <Icon className={`w-6 h-6 text-${color}-600`} />
+            <div className={`p-3 rounded-full ${validatorStatColors[color].bg}`}>
+                <Icon className={`w-6 h-6 ${validatorStatColors[color].text}`} />
             </div>
         </div>
     </div>
@@ -44,6 +52,7 @@ const ResponseValidatorPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failure'>('all');
   const [errorTypeFilter, setErrorTypeFilter] = useState<string>('all');
+  const [apiUnavailable, setApiUnavailable] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -66,10 +75,10 @@ const ResponseValidatorPage: React.FC = () => {
     } catch (err) {
       const axiosError = err as AxiosError;
       if (axiosError.isAxiosError && axiosError.response?.status === 404) {
-        // Handle "zero state" for new users with no data
-        setStats({ success_rate: 0, failure_rate: 0, autofix_success_rate: 0 });
-        setIssueBreakdown({});
-        setAutofixStats({ retries: {}, average_retries: 0 });
+        setApiUnavailable(true);
+        setStats(null);
+        setIssueBreakdown(null);
+        setAutofixStats(null);
         setTimeline([]);
       } else {
         setError(api.handleError(err));
@@ -86,8 +95,15 @@ const ResponseValidatorPage: React.FC = () => {
   if (loading) {
     return (
       <Layout title="Response Validator">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <LoadingSpinner size="lg" text="Loading validation data..." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-32 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-80 rounded-xl" />
+          <Skeleton className="h-80 rounded-xl" />
         </div>
       </Layout>
     );
@@ -105,6 +121,20 @@ const ResponseValidatorPage: React.FC = () => {
               label: 'Retry',
               onClick: fetchData,
             }}
+          />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (apiUnavailable) {
+    return (
+      <Layout title="Response Validator">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Validator metrics unavailable"
+            description="The backend endpoints for /validator/* are not available in this environment yet. Once they are deployed, this dashboard will automatically populate."
           />
         </div>
       </Layout>

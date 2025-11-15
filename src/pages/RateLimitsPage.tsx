@@ -8,19 +8,19 @@ import {
   Calendar,
   AlertTriangle,
   TrendingUp,
-  CheckCircle,
 } from "lucide-react";
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import api from "../services";
 import type { RateLimitConfig } from "../types/api";
+import { useToast } from "../components/ToastContainer";
 
 export default function RateLimitsPage() {
   const [config, setConfig] = useState<RateLimitConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Form state
   const [formData, setFormData] = useState<Partial<RateLimitConfig>>({
@@ -91,15 +91,13 @@ export default function RateLimitsPage() {
     try {
       setSaving(true);
       setError(null);
-      setSuccessMessage(null);
-
       await api.updateRateLimitConfig(formData as RateLimitConfig);
       await loadRateLimits();
-
-      setSuccessMessage("Rate limit configuration updated successfully!");
-      setTimeout(() => setSuccessMessage(null), 3000);
+      showToast("Rate limit configuration saved", "success");
     } catch (err) {
-      setError(api.handleError(err));
+      const message = api.handleError(err);
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -155,14 +153,6 @@ export default function RateLimitsPage() {
             costs
           </p>
         </div>
-
-        {/* Success Message */}
-        {successMessage && (
-          <div className="alert-success mb-6">
-            <CheckCircle className="w-5 h-5" />
-            <p>{successMessage}</p>
-          </div>
-        )}
 
         {/* Error Message */}
         {error && (
@@ -328,7 +318,7 @@ export default function RateLimitsPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
-              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400 transform hover:-translate-y-1 duration-200"
               onClick={() =>
                 setFormData({
                   ...formData,
@@ -346,7 +336,7 @@ export default function RateLimitsPage() {
               </p>
             </div>
             <div
-              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400 transform hover:-translate-y-1 duration-200"
               onClick={() =>
                 setFormData({
                   ...formData,
@@ -364,7 +354,7 @@ export default function RateLimitsPage() {
               </p>
             </div>
             <div
-              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400"
+              className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-400 transform hover:-translate-y-1 duration-200"
               onClick={() =>
                 setFormData({
                   ...formData,

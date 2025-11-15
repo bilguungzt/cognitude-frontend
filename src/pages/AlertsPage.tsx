@@ -16,6 +16,7 @@ import Modal from "../components/Modal";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import api from "../services";
+import { useToast } from "../components/ToastContainer";
 import type {
   AlertChannel,
   AlertChannelCreate,
@@ -45,6 +46,8 @@ export default function AlertsPage() {
     rate_limit_warning: 0.8,
     cache_hit_rate_warning: 0.3,
   });
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadAlerts();
@@ -77,8 +80,9 @@ export default function AlertsPage() {
       await loadAlerts();
       setIsChannelModalOpen(false);
       resetChannelForm();
+      showToast("Channel added", "success");
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     }
   };
 
@@ -89,8 +93,9 @@ export default function AlertsPage() {
     try {
       await api.deleteAlertChannel(channelId);
       await loadAlerts();
+      showToast("Channel deleted", "success");
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     }
   };
 
@@ -100,8 +105,9 @@ export default function AlertsPage() {
       await api.updateAlertConfig(configForm);
       await loadAlerts();
       setIsConfigModalOpen(false);
+      showToast("Alert configuration saved", "success");
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     }
   };
 
@@ -220,7 +226,7 @@ export default function AlertsPage() {
               {channels.map((channel) => (
                 <div
                   key={channel.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all"
+                  className="p-4 border border-gray-200 rounded-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">

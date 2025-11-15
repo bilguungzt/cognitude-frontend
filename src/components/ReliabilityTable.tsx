@@ -33,6 +33,14 @@ const ReliabilityTable: React.FC = () => {
     return <div className="text-red-500">Error: {error}</div>;
   }
 
+  if (logs.length === 0) {
+    return (
+      <div className="p-6 text-sm text-gray-500 border border-dashed border-gray-200 rounded-lg">
+        No validation failures have been recorded yet.
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200">

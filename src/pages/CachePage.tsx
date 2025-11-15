@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import {
   Database,
@@ -6,73 +6,58 @@ import {
   TrendingUp,
   Zap,
   DollarSign,
-  HardDrive,
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
 import Layout from "../components/Layout";
-import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import api from "../services";
 import type { CacheStats } from "../types/api";
+import { useApiQuery } from "../hooks/useApiQuery";
+import Skeleton from "../components/Skeleton";
+import { useToast } from "../components/ToastContainer";
 
 export default function CachePage() {
-  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: cacheStats,
+    isLoading,
+    error,
+    refetch,
+  } = useApiQuery<CacheStats>(["cache-stats"], async () => {
+    try {
+      return await api.getCacheStats();
+    } catch (err) {
+      if (err instanceof AxiosError && err.response?.status === 404) {
+        return {
+          total_entries: 0,
+          total_hits: 0,
+          hit_rate: 0,
+          estimated_savings_usd: 0,
+          redis_available: false,
+          redis_entries: 0,
+          redis_hits: 0,
+        };
+      }
+      throw err;
+    }
+  });
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [clearType, setClearType] = useState<"redis" | "postgresql" | "all">(
     "all"
   );
   const [clearing, setClearing] = useState(false);
-
-  useEffect(() => {
-    loadCacheStats();
-  }, []);
-
-  const loadCacheStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.getCacheStats();
-      setCacheStats(data);
-    } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 404) {
-        setCacheStats({
-          redis: {
-            hits: 0,
-            misses: 0,
-            hit_rate: 0,
-            total_keys: 0,
-            memory_usage_mb: 0,
-          },
-          postgresql: {
-            total_cached_responses: 0,
-            cost_savings: 0,
-            oldest_cache_entry: new Date().toISOString(),
-          },
-          lifetime_savings: {
-            total_cost_saved: 0,
-            requests_served_from_cache: 0,
-          },
-        });
-      } else {
-        setError(api.handleError(err));
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { showToast } = useToast();
 
   const handleClearCache = async () => {
     setClearing(true);
     try {
-      await api.clearCache({ cache_type: clearType });
-      await loadCacheStats();
+      await api.clearCache();
+      await refetch();
       setIsConfirmModalOpen(false);
+      showToast("Cache cleared successfully", "success");
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     } finally {
       setClearing(false);
     }
@@ -83,51 +68,73 @@ export default function CachePage() {
     setIsConfirmModalOpen(true);
   };
 
-  if (loading) {
+  const errorMessage = error ? api.handleError(error) : null;
+
+  if (isLoading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner size="lg" />
+      <Layout title="Cache Management">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <div>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-72 mt-2" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-36 w-full rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </Layout>
     );
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
       <Layout>
         <EmptyState
           icon={AlertTriangle}
           title="Failed to load cache statistics"
-          description={error}
+          description={errorMessage}
           action={{
             label: "Retry",
-            onClick: loadCacheStats,
+            onClick: () => refetch(),
           }}
         />
       </Layout>
     );
   }
 
-  // Definitive check for a valid data structure before proceeding to render.
-  // This handles initial null state, error states, and zero-states gracefully.
-  if (!cacheStats || !cacheStats.redis || !cacheStats.postgresql || !cacheStats.lifetime_savings) {
-      return (
-          <Layout>
-              <EmptyState
-                  icon={Database}
-                  title="No cache data available"
-                  description="Cache statistics will appear once you start using the proxy."
-                  action={{
-                      label: "Retry",
-                      onClick: loadCacheStats,
-                  }}
-              />
-          </Layout>
-      );
+  if (!cacheStats) {
+    return (
+      <Layout>
+        <EmptyState
+          icon={Database}
+          title="No cache data available"
+          description="Cache statistics will appear once you start using the proxy."
+          action={{
+            label: "Retry",
+            onClick: () => refetch(),
+          }}
+        />
+      </Layout>
+    );
   }
 
-  const cacheHitRate = (cacheStats.redis.hit_rate || 0) * 100;
+  const cacheHitRate = Math.max(0, (cacheStats.hit_rate || 0) * 100);
+  const cachedResponses = cacheStats.total_entries || 0;
+  const totalHits = cacheStats.total_hits || 0;
+  const estimatedSavings = cacheStats.estimated_savings_usd || 0;
+  const redisHits = cacheStats.redis_hits ?? totalHits;
+  const redisEntries = cacheStats.redis_entries ?? cachedResponses;
+  const redisAvailable = cacheStats.redis_available ?? false;
+  const requestsServed = totalHits;
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(value);
 
   return (
       <Layout title="Cache Management">
@@ -144,7 +151,7 @@ export default function CachePage() {
               </p>
             </div>
             <button
-              onClick={loadCacheStats}
+              onClick={() => refetch()}
               className="btn-secondary flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
@@ -155,13 +162,10 @@ export default function CachePage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Hit Rate */}
           <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Hit Rate
-                </p>
+                <p className="text-sm font-medium text-gray-600">Hit Rate</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">
                   {cacheHitRate.toFixed(1)}%
                 </p>
@@ -170,12 +174,11 @@ export default function CachePage() {
                 <Zap className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500">Redis</p>
-            </div>
+            <p className="text-xs text-gray-500 mt-4">
+              Percentage of requests served from cache
+            </p>
           </div>
 
-          {/* Total Cached */}
           <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -183,129 +186,118 @@ export default function CachePage() {
                   Cached Responses
                 </p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {cacheStats.postgresql.total_cached_responses.toLocaleString()}
+                  {cachedResponses.toLocaleString()}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Database className="w-6 h-6 text-blue-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500">PostgreSQL</p>
-            </div>
+            <p className="text-xs text-gray-500 mt-4">
+              Aggregate entries across cache layers
+            </p>
           </div>
 
-          {/* Memory Usage */}
           <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Memory Usage
+                  Requests Served
                 </p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {cacheStats.redis.memory_usage_mb.toFixed(1)} MB
+                  {requestsServed.toLocaleString()}
                 </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-full">
-                <HardDrive className="w-6 h-6 text-orange-600" />
+                <TrendingUp className="w-6 h-6 text-orange-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500">Memory</p>
-            </div>
+            <p className="text-xs text-gray-500 mt-4">
+              Lifetime cache hits tracked by the gateway
+            </p>
           </div>
 
-          {/* Cost Savings */}
           <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Total Saved
+                  Estimated Savings
                 </p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">
-                  ${cacheStats.lifetime_savings.total_cost_saved.toFixed(2)}
+                  {formatCurrency(estimatedSavings)}
                 </p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-xs text-gray-500">Lifetime</p>
-            </div>
+            <p className="text-xs text-gray-500 mt-4">
+              Cost avoided by serving cached responses
+            </p>
           </div>
         </div>
 
         {/* Cache Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Redis Cache */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Redis Cache
+                  Redis Cache Health
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Fast in-memory cache (1 hour TTL)
+                  Fast in-memory cache for sub-ms responses
                 </p>
               </div>
-              <button
-                onClick={() => openClearModal("redis")}
-                className="btn-danger-outline flex items-center gap-2 text-sm"
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  redisAvailable
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-600"
+                }`}
               >
-                <Trash2 className="w-4 h-4" />
-                Clear
-              </button>
+                {redisAvailable ? "Online" : "Offline"}
+              </span>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Cache Hits
+                <span className="text-gray-700">Entries tracked</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {redisEntries.toLocaleString()}
                 </span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Cache hits (Redis)</span>
                 <span className="text-lg font-bold text-green-600">
-                  {cacheStats.redis.hits.toLocaleString()}
+                  {redisHits.toLocaleString()}
                 </span>
               </div>
-
               <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Cache Misses
-                </span>
-                <span className="text-lg font-bold text-gray-900">
-                  {cacheStats.redis.misses.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Total Keys
-                </span>
-                <span className="text-lg font-bold text-gray-900">
-                  {cacheStats.redis.total_keys.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Hit Rate
-                </span>
+                <span className="text-gray-700">Overall hit rate</span>
                 <span className="text-lg font-bold text-purple-600">
                   {cacheHitRate.toFixed(1)}%
                 </span>
               </div>
             </div>
+
+            <button
+              onClick={() => openClearModal("redis")}
+              className="btn-danger-outline flex items-center gap-2 text-sm mt-6"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear cache
+            </button>
           </div>
 
-          {/* PostgreSQL Cache */}
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  PostgreSQL Cache
+                  Persistent Cache Overview
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Persistent long-term cache
+                  Warm storage layer backed by PostgreSQL
                 </p>
               </div>
               <button
@@ -313,38 +305,31 @@ export default function CachePage() {
                 className="btn-danger-outline flex items-center gap-2 text-sm"
               >
                 <Trash2 className="w-4 h-4" />
-                Clear
+                Clear cache
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Cached Responses
-                </span>
-                <span className="text-lg font-bold text-blue-600">
-                  {cacheStats.postgresql.total_cached_responses.toLocaleString()}
-                </span>
-              </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Detailed PostgreSQL metrics are not yet exposed via the API, but
+              you can still monitor aggregate usage and savings below.
+            </p>
 
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Cost Savings
-                </span>
-                <span className="text-lg font-bold text-green-600">
-                  ${cacheStats.postgresql.cost_savings.toFixed(2)}
-                </span>
+            <div className="space-y-3">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Cached responses observed
+                </p>
+                <p className="text-xl font-semibold text-gray-900 mt-1">
+                  {cachedResponses.toLocaleString()}
+                </p>
               </div>
-
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">
-                  Oldest Entry
-                </span>
-                <span className="text-lg font-bold text-gray-900">
-                  {new Date(
-                    cacheStats.postgresql.oldest_cache_entry
-                  ).toLocaleDateString()}
-                </span>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  Estimated savings to date
+                </p>
+                <p className="text-xl font-semibold text-green-600 mt-1">
+                  {formatCurrency(estimatedSavings)}
+                </p>
               </div>
             </div>
           </div>
@@ -366,15 +351,13 @@ export default function CachePage() {
                     Requests Served from Cache
                   </p>
                   <p className="text-3xl font-bold text-green-600 mt-1">
-                    {cacheStats.lifetime_savings.requests_served_from_cache.toLocaleString()}
+                    {requestsServed.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">
-                    Total Cost Saved
-                  </p>
+                  <p className="text-sm text-gray-600">Total Cost Saved</p>
                   <p className="text-3xl font-bold text-green-600 mt-1">
-                    ${cacheStats.lifetime_savings.total_cost_saved.toFixed(2)}
+                    {formatCurrency(estimatedSavings)}
                   </p>
                 </div>
               </div>
@@ -450,13 +433,15 @@ export default function CachePage() {
             <AlertTriangle className="w-5 h-5" />
             <div>
               <p className="font-semibold">
-                Are you sure you want to clear the{" "}
-                {clearType === "all" ? "entire" : clearType} cache?
+                Are you sure you want to clear cached responses?
+              </p>
+              <p className="text-sm mt-1 text-gray-700">
+                Requested scope: <span className="font-medium">{clearType}</span>
               </p>
               <p className="text-sm mt-1">
-                This will remove all cached responses and cannot be undone.
-                Future requests will need to contact the LLM providers directly
-                until the cache rebuilds.
+                This action clears both Redis and PostgreSQL caches and cannot be
+                undone. Future requests will go directly to the LLM providers
+                until the cache warms back up.
               </p>
             </div>
           </div>

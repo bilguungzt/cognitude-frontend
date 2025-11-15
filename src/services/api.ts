@@ -32,12 +32,19 @@ import type {
   IssueBreakdown,
   AutofixStats,
   ValidationTimelineEvent,
-  RetryAttemptsData,
   DashboardSummaryStats,
   AutopilotDashboardData,
   EnhancedDashboardData,
   ReconciliationReportResponse,
 } from "../types/api";
+
+interface SchemaValidationLogResponse {
+  id: number;
+  timestamp: string;
+  llm_request_id: number | null;
+  validation_error?: string | null;
+  was_successful: boolean;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5175";
 
@@ -325,17 +332,10 @@ class CognitudeAPI {
   }
 
   async getFailedValidationLogs(): Promise<ValidationLog[]> {
-    const response = await this.client.get<ValidationLog[]>(
+    const response = await this.client.get<SchemaValidationLogResponse[]>(
       "/api/schemas/validation-logs/failed"
     );
-    return response.data;
-  }
-
-  async getRetryAttemptsData(): Promise<RetryAttemptsData> {
-    const response = await this.client.get<RetryAttemptsData>(
-      "/api/schemas/retry-attempts"
-    );
-    return response.data;
+    return response.data.map((log) => this.mapValidationLog(log));
   }
 
   async uploadSchema(
@@ -361,10 +361,10 @@ class CognitudeAPI {
   // ==================== Validation Logs (Legacy) ====================
 
   async getValidationLogs(): Promise<ValidationLog[]> {
-    const response = await this.client.get<ValidationLog[]>(
-      "/validation-logs/"
+    const response = await this.client.get<SchemaValidationLogResponse[]>(
+      "/api/schemas/validation-logs/failed"
     );
-    return response.data;
+    return response.data.map((log) => this.mapValidationLog(log));
   }
 
   async getDashboardSummaryStatistics(): Promise<DashboardSummaryStats> {
@@ -472,6 +472,16 @@ class CognitudeAPI {
       return axiosError.message;
     }
     return "An unexpected error occurred";
+  }
+
+  private mapValidationLog(log: SchemaValidationLogResponse): ValidationLog {
+    return {
+      id: log.id,
+      timestamp: log.timestamp,
+      status: log.was_successful ? "success" : "failure",
+      error_details: log.validation_error ?? undefined,
+      request_id: log.llm_request_id ? String(log.llm_request_id) : "—",
+    };
   }
 }
 

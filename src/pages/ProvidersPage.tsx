@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Plus,
   Edit2,
@@ -15,11 +15,20 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import api from "../services";
 import type { Provider, ProviderCreate, ProviderType } from "../types/api";
+import { useApiQuery } from "../hooks/useApiQuery";
+import { useToast } from "../components/ToastContainer";
 
 export default function ProvidersPage() {
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
+  const {
+    data: providers = [],
+    isLoading,
+    error,
+    refetch,
+  } = useApiQuery<Provider[]>(["providers"], async () => {
+    const list = await api.getProviders();
+    return [...list].sort((a, b) => a.priority - b.priority);
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [showApiKey, setShowApiKey] = useState<Record<number, boolean>>({});
@@ -31,23 +40,6 @@ export default function ProvidersPage() {
     priority: 1,
     enabled: true,
   });
-
-  useEffect(() => {
-    loadProviders();
-  }, []);
-
-  const loadProviders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.getProviders();
-      setProviders(data.sort((a, b) => a.priority - b.priority));
-    } catch (err) {
-      setError(api.handleError(err));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenModal = (provider?: Provider) => {
     if (provider) {
@@ -90,13 +82,15 @@ export default function ProvidersPage() {
           priority: formData.priority,
           enabled: formData.enabled,
         });
+        showToast("Provider updated successfully", "success");
       } else {
         await api.createProvider(formData);
+        showToast("Provider added successfully", "success");
       }
-      await loadProviders();
+      await refetch();
       handleCloseModal();
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     }
   };
 
@@ -111,9 +105,10 @@ export default function ProvidersPage() {
 
     try {
       await api.deleteProvider(provider.id);
-      await loadProviders();
+      await refetch();
+      showToast("Provider deleted", "success");
     } catch (err) {
-      alert(api.handleError(err));
+      showToast(api.handleError(err), "error");
     }
   };
 
@@ -156,7 +151,9 @@ export default function ProvidersPage() {
     },
   ];
 
-  if (loading) {
+  const errorMessage = error ? api.handleError(error) : null;
+
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -191,10 +188,10 @@ export default function ProvidersPage() {
         </div>
 
         {/* Error State */}
-        {error && (
+        {errorMessage && (
           <div className="alert-error mb-6">
             <AlertTriangle className="w-5 h-5" />
-            <p>{error}</p>
+            <p>{errorMessage}</p>
           </div>
         )}
 
@@ -213,7 +210,10 @@ export default function ProvidersPage() {
           /* Providers List */
           <div className="space-y-4 mb-8">
             {providers.map((provider) => (
-              <div key={provider.id} className="card p-6">
+              <div
+                key={provider.id}
+                className="card p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
                     {/* Status Indicator */}

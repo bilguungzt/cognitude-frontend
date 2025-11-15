@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import api from "../services";
 
 type ReconciliationReport = {
@@ -17,6 +18,8 @@ type ReconciliationReport = {
 export default function ReconciliationCard() {
   const [latest, setLatest] = useState<ReconciliationReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,9 +36,17 @@ export default function ReconciliationCard() {
 
         if (mounted && list.length > 0) {
           setLatest(list[0]);
+        } else if (mounted) {
+          setLatest(null);
         }
-      } catch {
-        // silence - keep card lightweight
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          if (mounted) {
+            setUnavailable(true);
+          }
+        } else if (mounted) {
+          setErrorMessage(api.handleError(err));
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -69,7 +80,13 @@ export default function ReconciliationCard() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs text-gray-500">Reconciliation</p>
-            {latest ? (
+            {unavailable ? (
+              <p className="text-sm text-gray-600 mt-2">
+                Detailed reconciliation reports are not available in this
+                environment yet. Connect your billing exports to unlock this
+                view.
+              </p>
+            ) : latest ? (
               <>
                 <p className="text-lg font-semibold mt-1">
                   {latest.status === "DISCREPANCY_FOUND" ? (
@@ -93,14 +110,22 @@ export default function ReconciliationCard() {
                 No reconciliation reports found
               </p>
             )}
+            {errorMessage && (
+              <p className="text-xs text-red-500 mt-3">{errorMessage}</p>
+            )}
           </div>
 
           <div className="flex flex-col items-end">
             <button
-              onClick={() => navigate("/reconciliation")}
-              className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+              onClick={() => navigate("/cost")}
+              className={`px-3 py-1 rounded text-sm ${
+                latest && !unavailable
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
+              disabled={!latest || unavailable}
             >
-              View Reports
+              {unavailable ? "Coming Soon" : "View Reports"}
             </button>
           </div>
         </div>

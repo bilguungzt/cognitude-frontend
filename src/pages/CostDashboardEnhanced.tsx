@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../services";
 import axios from "axios";
+import type { AxiosError } from "axios";
 import type {
   UsageStats,
   DailyUsage,
@@ -37,6 +38,7 @@ export default function CostDashboardEnhanced() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [autopilotUnavailable, setAutopilotUnavailable] = useState(false);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -76,19 +78,30 @@ export default function CostDashboardEnhanced() {
 
       try {
         setError("");
-        const [data, savingsBreakdown] = await Promise.all([
-          api.getUsageStats({
+        const usage = await api.getUsageStats({
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+          group_by: "day",
+        });
+        setAnalyticsData(usage);
+
+        try {
+          const savingsBreakdown = await api.getAutopilotSavingsBreakdown({
             start_date: dateRange.start,
             end_date: dateRange.end,
-            group_by: "day",
-          }),
-          api.getAutopilotSavingsBreakdown({
-            start_date: dateRange.start,
-            end_date: dateRange.end,
-          }),
-        ]);
-        setAnalyticsData(data);
-        setAutopilotSavingsBreakdown(savingsBreakdown);
+          });
+          setAutopilotSavingsBreakdown(savingsBreakdown);
+          setAutopilotUnavailable(false);
+        } catch (autopilotErr) {
+          const axiosError = autopilotErr as AxiosError;
+          if (axiosError.isAxiosError && axiosError.response?.status === 404) {
+            setAutopilotUnavailable(true);
+            setAutopilotSavingsBreakdown(null);
+          } else {
+            setError(api.handleError(autopilotErr));
+            setAutopilotSavingsBreakdown(null);
+          }
+        }
       } catch (err: unknown) {
         console.error("Error loading analytics:", err);
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -102,11 +115,13 @@ export default function CostDashboardEnhanced() {
             breakdown: [],
             daily_usage: [],
           });
-          setAutopilotSavingsBreakdown({});
+          setAutopilotSavingsBreakdown(null);
+          setAutopilotUnavailable(true);
         } else {
           setError("Failed to load analytics data");
           setAnalyticsData(null);
           setAutopilotSavingsBreakdown(null);
+          setAutopilotUnavailable(false);
         }
       } finally {
         setLoading(false);
@@ -150,7 +165,7 @@ export default function CostDashboardEnhanced() {
     if (!analyticsData?.daily_usage.length) return;
 
     const headers = ["Date", "Requests", "Cost"];
-    const rows = analyticsData.daily_usage.map((day: DailyUsage) => [
+    const rows = dailyUsageData.map((day: DailyUsage) => [
       day.date,
       day.requests.toString(),
       day.cost.toString(),
@@ -167,20 +182,24 @@ export default function CostDashboardEnhanced() {
   };
 
   // Calculate trends
-  const costTrend =
-    analyticsData &&
-    analyticsData.daily_usage &&
-    analyticsData.daily_usage.length > 0
-      ? (((analyticsData.daily_usage[analyticsData.daily_usage.length - 1]
-          ?.cost || 0) -
-          (analyticsData.daily_usage[0]?.cost || 0)) /
-          (analyticsData.daily_usage[0]?.cost || 1)) *
-        100
-      : 0;
+  const dailyUsageData = useMemo(
+    () => analyticsData?.daily_usage ?? [],
+    [analyticsData]
+  );
 
-  const avgCostPerRequest = analyticsData
-    ? analyticsData.total_cost / (analyticsData.total_requests || 1)
-    : 0;
+  const costTrend = useMemo(() => {
+    if (!dailyUsageData.length) {
+      return 0;
+    }
+    const first = dailyUsageData[0]?.cost || 1;
+    const last = dailyUsageData[dailyUsageData.length - 1]?.cost || 0;
+    return ((last - first) / first) * 100;
+  }, [dailyUsageData]);
+
+  const avgCostPerRequest = useMemo(() => {
+    if (!analyticsData) return 0;
+    return analyticsData.total_cost / (analyticsData.total_requests || 1);
+  }, [analyticsData]);
 
   if (loading) {
     return (
@@ -365,9 +384,7 @@ export default function CostDashboardEnhanced() {
             </div>
 
             {/* Charts */}
-            {analyticsData &&
-            analyticsData.daily_usage &&
-            analyticsData.daily_usage.length > 0 ? (
+        {analyticsData && dailyUsageData.length > 0 ? (
               <>
                 {/* Cost Trend Chart */}
                 <div className="card mb-8">
@@ -377,7 +394,7 @@ export default function CostDashboardEnhanced() {
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
-                        data={analyticsData.daily_usage}
+                        data={dailyUsageData}
                         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       >
                         <defs>
@@ -450,7 +467,7 @@ export default function CostDashboardEnhanced() {
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
-                        data={analyticsData.daily_usage}
+                        data={dailyUsageData}
                         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -491,7 +508,20 @@ export default function CostDashboardEnhanced() {
                   <CostReconciliationCard />
                 </div>
 
-                {autopilotSavingsBreakdown && (
+                {autopilotUnavailable && (
+                  <div className="card mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Autopilot insights unavailable
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Autopilot analytics endpoints are not available in this
+                      environment yet. Once they are deployed, savings
+                      visualizations will appear here automatically.
+                    </p>
+                  </div>
+                )}
+
+                {autopilotSavingsBreakdown && !autopilotUnavailable && (
                   <div className="mb-8">
                     <AutopilotSavingsBreakdown
                       data={autopilotSavingsBreakdown}
@@ -507,7 +537,7 @@ export default function CostDashboardEnhanced() {
                   <div className="overflow-x-auto">
                     {/* Mobile View - Stacked Layout */}
                     <div className="sm:hidden space-y-3">
-                      {analyticsData.daily_usage.map(
+                      {dailyUsageData.map(
                         (day: DailyUsage, index: number) => (
                           <div
                             key={index}
@@ -565,7 +595,7 @@ export default function CostDashboardEnhanced() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {analyticsData.daily_usage.map(
+                          {dailyUsageData.map(
                             (day: DailyUsage, index: number) => (
                               <tr
                                 key={index}

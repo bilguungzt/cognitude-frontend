@@ -9,11 +9,7 @@ export interface Organization {
 
 // ==================== Provider Management ====================
 
-export type ProviderType =
-  | "openai"
-  | "anthropic"
-  | "google"
-  | "groq";
+export type ProviderType = "openai" | "anthropic" | "google" | "groq";
 
 export interface Provider {
   id: number;
@@ -148,29 +144,14 @@ export interface ReconciliationReportResponse {
 
 // ==================== Cache Management ====================
 
-export interface RedisCacheStats {
-  hits: number;
-  misses: number;
-  hit_rate: number;
-  total_keys: number;
-  memory_usage_mb: number;
-}
-
-export interface PostgreSQLCacheStats {
-  total_cached_responses: number;
-  cost_savings: number;
-  oldest_cache_entry: string;
-}
-
-export interface LifetimeSavings {
-  total_cost_saved: number;
-  requests_served_from_cache: number;
-}
-
 export interface CacheStats {
-  redis: RedisCacheStats;
-  postgresql: PostgreSQLCacheStats;
-  lifetime_savings: LifetimeSavings;
+  total_entries: number;
+  total_hits: number;
+  hit_rate: number;
+  estimated_savings_usd: number;
+  redis_available?: boolean;
+  redis_entries?: number;
+  redis_hits?: number;
 }
 
 export interface CacheClearRequest {
@@ -266,11 +247,6 @@ export interface SchemaStat {
   total_attempts: number;
   failure_rate: number;
   avg_retries: number;
-}
-
-export interface RetryAttemptsData {
-  labels: string[]; // e.g., ['0 Retries', '1 Retry', '2 Retries', '3+ Retries']
-  values: number[]; // e.g., [1500, 250, 50, 10]
 }
 
 // ==================== Model Management ====================
