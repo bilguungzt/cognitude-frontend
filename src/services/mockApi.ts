@@ -85,7 +85,7 @@ class MockCognitudeAPI {
       {
         id: 3,
         organization_id: 1,
-        provider: "mistral",
+        provider: "huggingface",
         api_key: "sk-...",
         priority: 3,
         enabled: false,
@@ -137,7 +137,7 @@ class MockCognitudeAPI {
       id: "chatcmpl-123",
       object: "chat.completion",
       created: 1677652288,
-      model: "gpt-3.5-turbo-0613",
+      model: "gpt-4o-mini",
       choices: [
         {
           index: 0,
@@ -188,8 +188,9 @@ class MockCognitudeAPI {
       cache_hit_rate: 0.1,
       cost_savings: 12.34,
       breakdown: [
-        { model: "gpt-4", requests: 5000, cost: 80.25, tokens: 500000 },
-        { model: "gpt-3.5-turbo", requests: 7345, cost: 43.2, tokens: 734500 },
+        { model: "gpt-4o", requests: 5000, cost: 80.25, tokens: 500000 },
+        { model: "gpt-4o-mini", requests: 7345, cost: 43.2, tokens: 734500 },
+        { model: "claude-3-opus", requests: 1200, cost: 30.0, tokens: 120000 },
       ],
       daily_usage: daily_usage.reverse(),
     };
@@ -209,7 +210,7 @@ class MockCognitudeAPI {
         {
           type: "model",
           title: "Use cheaper model for simple tasks",
-          description: "Route classification to gpt-3.5.",
+          description: "Route classification to gpt-4o-mini.",
           potential_savings: 45.0,
           priority: "medium",
         },
@@ -504,10 +505,11 @@ class MockCognitudeAPI {
 
   async getAutopilotModelRouting() {
     return {
-      "gpt-4": 20,
-      "gpt-3.5-turbo": 60,
-      "claude-2": 15,
-      "gemini-pro": 5,
+      "gpt-4o": 20,
+      "gpt-4o-mini": 60,
+      "claude-3-opus": 15,
+      "gemini-2-pro": 5,
+      "llama-3": 4,
     };
   }
 
@@ -522,20 +524,20 @@ class MockCognitudeAPI {
     return [
       {
         timestamp: new Date().toISOString(),
-        original_model: "gpt-4",
-        selected_model: "gpt-3.5-turbo",
+        original_model: "gpt-4o",
+        selected_model: "gpt-4o-mini",
         reason: "Cost optimization",
       },
       {
         timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        original_model: "gpt-4",
-        selected_model: "gpt-4",
+        original_model: "gpt-4o",
+        selected_model: "gpt-4o",
         reason: "High complexity",
       },
       {
         timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-        original_model: "claude-2",
-        selected_model: "gpt-3.5-turbo",
+        original_model: "claude-3-opus",
+        selected_model: "gpt-4o-mini",
         reason: "Cache hit",
       },
     ];
@@ -621,7 +623,7 @@ class MockCognitudeAPI {
       ],
       bestOptimization: {
         originalModel: "GPT-4",
-        selectedModel: "GPT-3.5 Turbo",
+        selectedModel: "GPT-4o-Mini",
         savingsPerRequest: 0.04,
         totalImpact: 1230.45,
         requestCount: 380,
@@ -632,7 +634,7 @@ class MockCognitudeAPI {
           timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
           type: "model_reroute",
           description:
-            "Rerouted 50 requests from `gpt-4` to `gpt-3.5-turbo` saving an estimated $5.20.",
+            "Rerouted 50 requests from `gpt-4o` to `gpt-4o-mini` saving an estimated $5.20.",
         },
         {
           id: "evt_2",
@@ -744,32 +746,33 @@ class MockCognitudeAPI {
         nodes: [
           { id: "User Request" },
           { id: "Autopilot" },
-          { id: "GPT-4" },
-          { id: "GPT-3.5-Turbo" },
+          { id: "GPT-4o" },
+          { id: "GPT-4o-Mini" },
           { id: "Claude 3 Sonnet" },
-          { id: "Gemini Pro" },
+          { id: "Gemini 2 Pro" },
+          { id: "Llama 3" },
         ],
         links: [
           { source: "User Request", target: "Autopilot", value: 100 },
-          { source: "Autopilot", target: "GPT-4", value: 20 },
-          { source: "Autopilot", target: "GPT-3.5-Turbo", value: 55 },
+          { source: "Autopilot", target: "GPT-4o", value: 20 },
+          { source: "Autopilot", target: "GPT-4o-Mini", value: 55 },
           { source: "Autopilot", target: "Claude 3 Sonnet", value: 15 },
-          { source: "Autopilot", target: "Gemini Pro", value: 10 },
+          { source: "Autopilot", target: "Gemini 2 Pro", value: 10 },
         ],
       },
       logs: [
         {
           timestamp: new Date().toISOString(),
-          original_model: "gpt-4",
-          selected_model: "gpt-3.5-turbo",
+          original_model: "gpt-4o",
+          selected_model: "gpt-4o-mini",
           reason: "Cost optimization for simple query",
           cost_saved: 0.0015,
           speed_improvement: 250,
         },
         {
-          timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-          original_model: "gpt-4",
-          selected_model: "gpt-4",
+          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+          original_model: "gpt-4o",
+          selected_model: "gpt-4o",
           reason: "High complexity detected",
           cost_saved: 0,
           speed_improvement: 0,
@@ -784,8 +787,8 @@ class MockCognitudeAPI {
         },
         {
           timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-          original_model: "gemini-pro",
-          selected_model: "gpt-3.5-turbo",
+          original_model: "gemini-2-pro",
+          selected_model: "gpt-4o-mini",
           reason: "Provider API latency spike",
           cost_saved: 0.0005,
           speed_improvement: 150,

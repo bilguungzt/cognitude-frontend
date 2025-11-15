@@ -9,7 +9,12 @@ export interface Organization {
 
 // ==================== Provider Management ====================
 
-export type ProviderType = 'openai' | 'anthropic' | 'mistral' | 'groq' | 'google';
+export type ProviderType =
+  | "openai"
+  | "anthropic"
+  | "huggingface"
+  | "groq"
+  | "google";
 
 export interface Provider {
   id: number;
@@ -37,7 +42,7 @@ export interface ProviderUpdate {
 // ==================== Chat Completions ====================
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -116,7 +121,7 @@ export interface Recommendation {
   title: string;
   description: string;
   potential_savings: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export interface RecommendationsResponse {
@@ -170,7 +175,7 @@ export interface CacheStats {
 }
 
 export interface CacheClearRequest {
-  cache_type?: 'redis' | 'postgresql' | 'all';
+  cache_type?: "redis" | "postgresql" | "all";
   pattern?: string;
 }
 
@@ -182,7 +187,7 @@ export interface CacheClearResponse {
 
 // ==================== Alerts ====================
 
-export type AlertChannelType = 'email' | 'slack' | 'webhook';
+export type AlertChannelType = "email" | "slack" | "webhook";
 
 export interface AlertChannelConfig {
   email?: string;
@@ -306,11 +311,11 @@ export interface CreateModelRequest {
 // ==================== Autopilot Types ====================
 
 export interface AutopilotClassificationBreakdown {
- [classification: string]: number;
+  [classification: string]: number;
 }
 
 export interface AutopilotModelRouting {
- [model: string]: number;
+  [model: string]: number;
 }
 
 export interface AutopilotSavings {
@@ -319,10 +324,10 @@ export interface AutopilotSavings {
 }
 
 export interface AutopilotLog {
- timestamp: string;
- original_model: string;
- selected_model: string;
- reason: string;
+  timestamp: string;
+  original_model: string;
+  selected_model: string;
+  reason: string;
 }
 export interface AutopilotSavingsBreakdown {
   [reason: string]: {
@@ -390,7 +395,7 @@ export interface AutofixStats {
 export interface ValidationTimelineEvent {
   id: string;
   timestamp: string;
-  status: 'success' | 'failure';
+  status: "success" | "failure";
   error_type: string | null;
   request_summary: string;
   response_summary: string;
@@ -452,7 +457,6 @@ export interface EnhancedDashboardData {
     }[];
   };
 }
-
 
 // ==================== Error Types ====================
 

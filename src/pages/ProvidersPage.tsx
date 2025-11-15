@@ -134,16 +134,20 @@ export default function ProvidersPage() {
     label: string;
     description: string;
   }[] = [
-    { value: "openai", label: "OpenAI", description: "GPT-4, GPT-3.5, etc." },
+    {
+      value: "openai",
+      label: "OpenAI",
+      description: "GPT-4, GPT-4o, GPT-4o-mini, etc.",
+    },
     {
       value: "anthropic",
       label: "Anthropic",
       description: "Claude 3 Opus, Sonnet, Haiku",
     },
     {
-      value: "mistral",
-      label: "Mistral AI",
-      description: "Mistral Large, Medium",
+      value: "huggingface",
+      label: "Hugging Face",
+      description: "Hugging Face Hub (Llama, community models)",
     },
     {
       value: "groq",
@@ -199,20 +203,17 @@ export default function ProvidersPage() {
           <EmptyState
             icon={Database}
             title="No providers configured"
-            description="Add your first LLM provider to start using the proxy. You'll need an API key from OpenAI, Anthropic, Mistral, or Groq."
+            description="Add your first LLM provider to start using the proxy. You'll need an API key from OpenAI, Anthropic, Hugging Face, or Groq."
             action={{
               label: "Add Provider",
               onClick: () => handleOpenModal(),
             }}
           />
         ) : (
-          /* Providers List */ 
+          /* Providers List */
           <div className="space-y-4 mb-8">
             {providers.map((provider) => (
-              <div
-                key={provider.id}
-                className="card p-6"
-              >
+              <div key={provider.id} className="card p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
                     {/* Status Indicator */}
@@ -233,13 +234,9 @@ export default function ProvidersPage() {
                           {provider.provider}
                         </h3>
                         {provider.enabled ? (
-                          <span className="badge-success">
-                            Active
-                          </span>
+                          <span className="badge-success">Active</span>
                         ) : (
-                          <span className="badge-neutral">
-                            Inactive
-                          </span>
+                          <span className="badge-neutral">Inactive</span>
                         )}
                       </div>
 

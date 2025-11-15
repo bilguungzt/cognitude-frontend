@@ -4,7 +4,12 @@ import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import { api } from "../services";
 
-type ProviderType = "OpenAI" | "Anthropic" | "Mistral" | "Google AI" | "Cohere";
+type ProviderType =
+  | "OpenAI"
+  | "Anthropic"
+  | "Hugging Face"
+  | "Google AI"
+  | "Cohere";
 type IntegrationOption = "python" | "nodejs" | "curl" | "rest";
 
 export default function SetupPage() {
@@ -16,7 +21,7 @@ export default function SetupPage() {
   const [monthlyBudget, setMonthlyBudget] = useState<string>("500.00");
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">("High");
   const [testProvider, setTestProvider] = useState<ProviderType>("OpenAI");
-  const [testModel, setTestModel] = useState<string>("gpt-3.5-turbo-0125");
+  const [testModel, setTestModel] = useState<string>("gpt-4o-mini");
   const [testMessage, setTestMessage] = useState<string>(
     "Hello! This is a test from Cognitude."
   );
@@ -28,9 +33,11 @@ export default function SetupPage() {
   const [copied, setCopied] = useState<string>("");
   const [selectedIntegration, setSelectedIntegration] =
     useState<IntegrationOption>("python");
-  const [providerTestLoading, setProviderTestLoading] = useState<boolean>(false);
+  const [providerTestLoading, setProviderTestLoading] =
+    useState<boolean>(false);
   const [providerTestResult, setProviderTestResult] = useState<string>("");
-  const [providerSaveLoading, setProviderSaveLoading] = useState<boolean>(false);
+  const [providerSaveLoading, setProviderSaveLoading] =
+    useState<boolean>(false);
   // logout and navigate hooks are provided by Layout; not used directly in this page
 
   const handleCopy = (text: string, label: string) => {
@@ -64,25 +71,29 @@ export default function SetupPage() {
     try {
       // Map frontend provider names to backend names
       const providerMap: Record<ProviderType, string> = {
-        "OpenAI": "openai",
-        "Anthropic": "anthropic", 
-        "Mistral": "mistral",
+        OpenAI: "openai",
+        Anthropic: "anthropic",
+        "Hugging Face": "huggingface",
         "Google AI": "google",
-        "Cohere": "cohere"
+        Cohere: "cohere",
       };
 
       const backendProvider = providerMap[selectedProvider];
-      
+
       const result = await (api as any).testProvider({
         provider: backendProvider,
         api_key: providerApiKey,
         enabled: true,
-        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3
+        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3,
       });
 
-      setProviderTestResult(`✅ ${result.message}\nProvider: ${result.provider}\nModel: ${result.model}\nResponse: ${result.response}`);
+      setProviderTestResult(
+        `✅ ${result.message}\nProvider: ${result.provider}\nModel: ${result.model}\nResponse: ${result.response}`
+      );
     } catch (error: any) {
-      setProviderTestResult(`❌ Connection failed: ${error.response?.data?.detail || error.message}`);
+      setProviderTestResult(
+        `❌ Connection failed: ${error.response?.data?.detail || error.message}`
+      );
     } finally {
       setProviderTestLoading(false);
     }
@@ -99,26 +110,30 @@ export default function SetupPage() {
     try {
       // Map frontend provider names to backend names
       const providerMap: Record<ProviderType, string> = {
-        "OpenAI": "openai",
-        "Anthropic": "anthropic",
-        "Mistral": "mistral", 
+        OpenAI: "openai",
+        Anthropic: "anthropic",
+        "Hugging Face": "huggingface",
         "Google AI": "google",
-        "Cohere": "cohere"
+        Cohere: "cohere",
       };
 
       const backendProvider = providerMap[selectedProvider];
-      
+
       await api.createProvider({
         provider: backendProvider as any,
         api_key: providerApiKey,
         enabled: true,
-        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3
+        priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3,
       });
 
       alert("Provider saved successfully!");
       setProviderApiKey(""); // Clear the form
     } catch (error: any) {
-      alert(`Failed to save provider: ${error.response?.data?.detail || error.message}`);
+      alert(
+        `Failed to save provider: ${
+          error.response?.data?.detail || error.message
+        }`
+      );
     } finally {
       setProviderSaveLoading(false);
     }
@@ -129,7 +144,7 @@ export default function SetupPage() {
   const providerOptions: ProviderType[] = [
     "OpenAI",
     "Anthropic",
-    "Mistral",
+    "Hugging Face",
     "Google AI",
     "Cohere",
   ];
@@ -179,9 +194,9 @@ print(f"💰 You've saved \${savings['total_saved']:.2f} this month!")`,
 da = Cognitude(api_key="${cognitudeApiKey.substring(0, 8)}••••••••")
 
 # Configure providers
-da.add_provider("openai", api_key="sk-proj-...")
-da.add_provider("anthropic", api_key="sk-ant-...")
-da.add_provider("mistral", api_key="...")
+  da.add_provider("openai", api_key="sk-proj-...")
+  da.add_provider("anthropic", api_key="sk-ant-...")
+  da.add_provider("huggingface", api_key="...")
 
 # Smart routing - auto-selects cheapest model
 response = da.smart_completion(
@@ -349,8 +364,8 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
             Step 2: Connect Your LLM Provider
           </h3>
           <p className="text-text-secondary mb-4">
-            Add your OpenAI, Anthropic, or Mistral API keys so Cognitude can
-            proxy and optimize your requests.
+            Add your OpenAI, Anthropic, or Hugging Face API keys so Cognitude
+            can proxy and optimize your requests.
           </p>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -427,14 +442,14 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
             </div>
 
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={handleTestProviderConnection}
                 disabled={providerTestLoading}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 {providerTestLoading ? "Testing..." : "✓ Test Connection"}
               </button>
-              <button 
+              <button
                 onClick={handleSaveProvider}
                 disabled={providerSaveLoading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -445,9 +460,13 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
 
             {providerTestResult && (
               <div className="mt-4 p-4 bg-bg-secondary border border-border-primary rounded-lg">
-                <p className={`whitespace-pre-line ${
-                  providerTestResult.includes("✅") ? "text-success-600" : "text-error-600"
-                }`}>
+                <p
+                  className={`whitespace-pre-line ${
+                    providerTestResult.includes("✅")
+                      ? "text-success-600"
+                      : "text-error-600"
+                  }`}
+                >
                   {providerTestResult}
                 </p>
               </div>
@@ -930,7 +949,7 @@ response2 = client.chat.completions.create(
                 <ul className="list-disc list-inside text-text-secondary mb-3 space-y-1">
                   <li>Analyses each prompt's complexity</li>
                   <li>Routes simple tasks to GPT-3.5, complex to GPT-4</li>
-                  <li>Compares costs across OpenAI, Anthropic, Mistral</li>
+                  <li>Compares costs across OpenAI, Anthropic, Hugging Face</li>
                   <li>Selects optimal provider based on your priority</li>
                 </ul>
                 <div className="flex flex-wrap items-center gap-4">
@@ -1514,8 +1533,8 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
                     Configure Multiple Providers
                   </h4>
                   <p className="text-sm text-gray-600">
-                    Set up Anthropic Claude and Mistral for automatic failover
-                    and cost optimization.
+                    Set up Anthropic Claude and Hugging Face for automatic
+                    failover and cost optimization.
                   </p>
                 </div>
               </div>
