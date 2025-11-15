@@ -12,9 +12,9 @@ export interface Organization {
 export type ProviderType =
   | "openai"
   | "anthropic"
-  | "huggingface"
+  | "google"
   | "groq"
-  | "google";
+  | "cohere";
 
 export interface Provider {
   id: number;
