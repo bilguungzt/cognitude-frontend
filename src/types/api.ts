@@ -13,8 +13,7 @@ export type ProviderType =
   | "openai"
   | "anthropic"
   | "google"
-  | "groq"
-  | "cohere";
+  | "groq";
 
 export interface Provider {
   id: number;

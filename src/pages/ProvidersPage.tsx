@@ -137,27 +137,22 @@ export default function ProvidersPage() {
     {
       value: "openai",
       label: "OpenAI",
-      description: "GPT-4 Turbo, GPT-4o, o1-preview, o1-mini",
+      description: "GPT-5.1, GPT-5, GPT-4.5, o4-mini, o1-preview",
     },
     {
       value: "anthropic",
       label: "Anthropic",
-      description: "Claude 3.5 Sonnet, Claude 3 Opus, Haiku",
+      description: "Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1",
     },
     {
       value: "google",
       label: "Google Gemini",
-      description: "Gemini 2.0 Flash, Gemini 1.5 Pro",
-    },
-    {
-      value: "cohere",
-      label: "Cohere",
-      description: "Command R+, Command R, Embed models",
+      description: "Gemini 2.5 Pro, Gemini 2.0 Flash",
     },
     {
       value: "groq",
       label: "Groq",
-      description: "Fast inference with Llama 3.3, Mixtral",
+      description: "Groq 4, Fast 1, Llama 4, Mixtral",
     },
   ];
 
@@ -208,7 +203,7 @@ export default function ProvidersPage() {
           <EmptyState
             icon={Database}
             title="No providers configured"
-            description="Add your first LLM provider to start using the proxy. You'll need an API key from OpenAI, Anthropic, Google Gemini, Cohere, or Groq."
+            description="Add your first LLM provider to start using the proxy. You'll need an API key from OpenAI, Anthropic, Google Gemini, or Groq."
             action={{
               label: "Add Provider",
               onClick: () => handleOpenModal(),
