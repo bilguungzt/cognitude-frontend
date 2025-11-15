@@ -14,40 +14,10 @@ const formatCurrency = (value: number) => {
 };
 
 export default function AutopilotSavingsBreakdown({ data }: Props) {
-  // Defensive check: ensure data is an object and has entries
-  if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
-    return (
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Autopilot Savings Breakdown
-        </h3>
-        <div className="p-8 text-center text-gray-500">
-          No savings data available
-        </div>
-      </div>
-    );
-  }
-
-  const chartData = Object.entries(data)
-    .filter(([, value]) => value && typeof value === 'object' && 'savings' in value)
-    .map(([reason, { savings }]) => ({
-      name: reason,
-      savings: typeof savings === 'number' ? savings : 0,
-    }));
-
-  // If no valid chart data after filtering, show empty state
-  if (!chartData || chartData.length === 0) {
-    return (
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Autopilot Savings Breakdown
-        </h3>
-        <div className="p-8 text-center text-gray-500">
-          No savings data available
-        </div>
-      </div>
-    );
-  }
+  const chartData = Object.entries(data).map(([reason, { savings }]) => ({
+    name: reason,
+    savings,
+  }));
 
   return (
     <div className="card">

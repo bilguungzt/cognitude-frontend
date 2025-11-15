@@ -99,16 +99,33 @@ export interface DailyUsage {
   date: string;
   requests: number;
   cost: number;
+  cached_requests?: number;
+  cache_savings?: number;
+}
+
+export interface ProviderUsage {
+  provider: string;
+  requests: number;
+  cost: number;
+  avg_latency_ms: number;
+}
+
+export interface ModelUsage {
+  model: string;
+  requests: number;
+  cost: number;
+  total_tokens: number;
 }
 
 export interface UsageStats {
   total_requests: number;
   total_cost: number;
-  cache_hits: number;
+  average_latency: number;
   cache_hit_rate: number;
-  cost_savings: number;
-  breakdown: UsageBreakdown[];
-  daily_usage: DailyUsage[];
+  total_tokens: number;
+  usage_by_day: DailyUsage[];
+  usage_by_provider: ProviderUsage[];
+  usage_by_model: ModelUsage[];
 }
 
 export interface Recommendation {

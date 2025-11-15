@@ -25,9 +25,12 @@ export default function ProvidersPage() {
     isLoading,
     error,
     refetch,
-  } = useApiQuery<Provider[]>(["providers"], async () => {
-    const list = await api.getProviders();
-    return [...list].sort((a, b) => a.priority - b.priority);
+  } = useApiQuery<Provider[]>({
+    queryKey: ["providers"],
+    queryFn: async () => {
+      const list = await api.getProviders();
+      return [...list].sort((a, b) => a.priority - b.priority);
+    },
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);

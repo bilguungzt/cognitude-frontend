@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useApiQuery } from "../hooks/useApiQuery";
 import api from "../services";
-import axios from "axios";
-import type { AxiosError } from "axios";
 import type {
   UsageStats,
   DailyUsage,
@@ -32,13 +31,6 @@ import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
 import CostReconciliationCard from "../components/Dashboard/CostReconciliationCard";
 
 export default function CostDashboardEnhanced() {
-  const [analyticsData, setAnalyticsData] = useState<UsageStats | null>(null);
-  const [autopilotSavingsBreakdown, setAutopilotSavingsBreakdown] =
-    useState<AutopilotSavingsBreakdownType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [autopilotUnavailable, setAutopilotUnavailable] = useState(false);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -46,102 +38,67 @@ export default function CostDashboardEnhanced() {
     end: new Date().toISOString().split("T")[0],
   });
 
-  const loadAnalyticsData = useCallback(
-    async (isRefresh = false) => {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+  // Validate date range
+  const isValidDateRange = (() => {
+    try {
+      const start = new Date(dateRange.start);
+      const end = new Date(dateRange.end);
+      return !isNaN(start.getTime()) && !isNaN(end.getTime()) && start <= end;
+    } catch {
+      return false;
+    }
+  })();
 
-      const startDate = new Date(dateRange.start);
-      const endDate = new Date(dateRange.end);
-
-      if (
-        Number.isNaN(startDate.getTime()) ||
-        Number.isNaN(endDate.getTime())
-      ) {
-        setError("Please select a valid date range");
-        setAnalyticsData(null);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      if (startDate > endDate) {
-        setError("Start date must be before end date");
-        setAnalyticsData(null);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      try {
-        setError("");
-        const usage = await api.getUsageStats({
-            start_date: dateRange.start,
-            end_date: dateRange.end,
-            group_by: "day",
-        });
-        setAnalyticsData(usage);
-
-        try {
-          const savingsBreakdown = await api.getAutopilotSavingsBreakdown({
-            start_date: dateRange.start,
-            end_date: dateRange.end,
-          });
-          // Validate the response structure before setting state
-          if (savingsBreakdown && typeof savingsBreakdown === 'object') {
-            setAutopilotSavingsBreakdown(savingsBreakdown);
-            setAutopilotUnavailable(false);
-          } else {
-            setAutopilotUnavailable(true);
-            setAutopilotSavingsBreakdown(null);
-          }
-        } catch (autopilotErr) {
-          const axiosError = autopilotErr as AxiosError;
-          if (axiosError.isAxiosError && axiosError.response?.status === 404) {
-            setAutopilotUnavailable(true);
-            setAutopilotSavingsBreakdown(null);
-          } else {
-            // Don't set error for autopilot failures - just mark as unavailable
-            console.warn('Autopilot savings breakdown unavailable:', api.handleError(autopilotErr));
-            setAutopilotUnavailable(true);
-            setAutopilotSavingsBreakdown(null);
-          }
-        }
-      } catch (err: unknown) {
-        console.error("Error loading analytics:", err);
-        if (axios.isAxiosError(err) && err.response?.status === 404) {
-          // Handle 404 as a "zero state" for all data
-          setAnalyticsData({
-            total_requests: 0,
-            total_cost: 0,
-            cache_hits: 0,
-            cache_hit_rate: 0,
-            cost_savings: 0,
-            breakdown: [],
-            daily_usage: [],
-          });
-          setAutopilotSavingsBreakdown(null);
-          setAutopilotUnavailable(true);
-        } else {
-          setError("Failed to load analytics data");
-          setAnalyticsData(null);
-          setAutopilotSavingsBreakdown(null);
-          setAutopilotUnavailable(false);
-        }
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
+  const analyticsData = useApiQuery<UsageStats>({
+    queryKey: ["usage-stats", dateRange.start, dateRange.end],
+    queryFn: () =>
+      api.getUsageStats({
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+        group_by: "day",
+      }),
+    zeroStateOn404: {
+      total_requests: 0,
+      total_cost: 0,
+      average_latency: 0,
+      cache_hit_rate: 0,
+      total_tokens: 0,
+      usage_by_day: [],
+      usage_by_provider: [],
+      usage_by_model: [],
     },
-    [dateRange]
-  );
+    enabled: isValidDateRange,
+  });
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [loadAnalyticsData]);
+  const autopilotSavingsBreakdown = useApiQuery<AutopilotSavingsBreakdownType>({
+    queryKey: ["autopilot-savings-breakdown", dateRange.start, dateRange.end],
+    queryFn: () =>
+      api.getAutopilotSavingsBreakdown({
+        start_date: dateRange.start,
+        end_date: dateRange.end,
+      }),
+    zeroStateOn404: {},
+    enabled: isValidDateRange,
+  });
+
+  const loading =
+    isValidDateRange &&
+    (analyticsData.isLoading || autopilotSavingsBreakdown.isLoading);
+  const error =
+    isValidDateRange && (analyticsData.error || autopilotSavingsBreakdown.error)
+      ? String(analyticsData.error || autopilotSavingsBreakdown.error)
+      : null;
+  const autopilotUnavailable =
+    isValidDateRange &&
+    autopilotSavingsBreakdown.data &&
+    Object.keys(autopilotSavingsBreakdown.data).length === 0;
+
+  const handleRefresh = () => {
+    if (isValidDateRange) {
+      analyticsData.refetch();
+      autopilotSavingsBreakdown.refetch();
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -170,7 +127,7 @@ export default function CostDashboardEnhanced() {
   };
 
   const exportToCSV = () => {
-    if (!analyticsData?.daily_usage.length) return;
+    if (!analyticsData.data?.usage_by_day.length) return;
 
     const headers = ["Date", "Requests", "Cost"];
     const rows = dailyUsageData.map((day: DailyUsage) => [
@@ -191,8 +148,8 @@ export default function CostDashboardEnhanced() {
 
   // Calculate trends
   const dailyUsageData = useMemo(
-    () => analyticsData?.daily_usage ?? [],
-    [analyticsData]
+    () => analyticsData.data?.usage_by_day ?? [],
+    [analyticsData.data]
   );
 
   const costTrend = useMemo(() => {
@@ -205,14 +162,42 @@ export default function CostDashboardEnhanced() {
   }, [dailyUsageData]);
 
   const avgCostPerRequest = useMemo(() => {
-    if (!analyticsData) return 0;
-    return analyticsData.total_cost / (analyticsData.total_requests || 1);
-  }, [analyticsData]);
+    if (!analyticsData.data) return 0;
+    const data = analyticsData.data;
+    return data.total_cost / (data.total_requests || 1);
+  }, [analyticsData.data]);
 
   if (loading) {
     return (
       <Layout title="Cost Analytics">
         <LoadingSpinner size="lg" text="Loading cost analytics..." />
+      </Layout>
+    );
+  }
+
+  if (!isValidDateRange) {
+    return (
+      <Layout title="Cost Analytics">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="alert-error">
+            <p>
+              Please select a valid date range (start date must be before end
+              date)
+            </p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout title="Cost Analytics">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="alert-error">
+            <p>Failed to load cost analytics: {error}</p>
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -288,18 +273,18 @@ export default function CostDashboardEnhanced() {
 
             <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto mt-4 xl:mt-0">
               <button
-                onClick={() => loadAnalyticsData(true)}
-                disabled={refreshing}
+                onClick={handleRefresh}
+                disabled={loading}
                 className="btn-outline w-full md:w-auto"
               >
                 <RefreshCw
-                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
                 />
                 Refresh
               </button>
               <button
                 onClick={exportToCSV}
-                disabled={!analyticsData?.daily_usage.length}
+                disabled={!analyticsData.data?.usage_by_day.length}
                 className="btn-primary w-full md:w-auto"
               >
                 <Download className="w-4 h-4" />
@@ -316,7 +301,7 @@ export default function CostDashboardEnhanced() {
           </div>
         )}
 
-        {analyticsData ? (
+        {analyticsData.data ? (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -338,7 +323,7 @@ export default function CostDashboardEnhanced() {
                   Total Spend
                 </p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(analyticsData.total_cost)}
+                  {formatCurrency(analyticsData.data?.total_cost || 0)}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   {formatDate(dateRange.start)} - {formatDate(dateRange.end)}
@@ -355,7 +340,7 @@ export default function CostDashboardEnhanced() {
                   Total Requests
                 </p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {analyticsData.total_requests.toLocaleString()}
+                  {(analyticsData.data?.total_requests || 0).toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">Across all models</p>
               </div>
@@ -392,7 +377,7 @@ export default function CostDashboardEnhanced() {
             </div>
 
             {/* Charts */}
-        {analyticsData && dailyUsageData.length > 0 ? (
+            {analyticsData && dailyUsageData.length > 0 ? (
               <>
                 {/* Cost Trend Chart */}
                 <div className="card mb-8">
@@ -529,13 +514,10 @@ export default function CostDashboardEnhanced() {
                   </div>
                 )}
 
-                {autopilotSavingsBreakdown && 
-                 !autopilotUnavailable && 
-                 typeof autopilotSavingsBreakdown === 'object' &&
-                 Object.keys(autopilotSavingsBreakdown).length > 0 && (
+                {autopilotSavingsBreakdown.data && !autopilotUnavailable && (
                   <div className="mb-8">
                     <AutopilotSavingsBreakdown
-                      data={autopilotSavingsBreakdown}
+                      data={autopilotSavingsBreakdown.data}
                     />
                   </div>
                 )}
@@ -548,42 +530,35 @@ export default function CostDashboardEnhanced() {
                   <div className="overflow-x-auto">
                     {/* Mobile View - Stacked Layout */}
                     <div className="sm:hidden space-y-3">
-                      {dailyUsageData.map(
-                        (day: DailyUsage, index: number) => (
-                          <div
-                            key={index}
-                            className="p-4 bg-white rounded-lg shadow-sm border border-gray-100"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="text-sm font-medium text-gray-900">
-                                {new Date(day.date).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  }
-                                )}
-                              </div>
-                              <div className="text-sm font-semibold text-gray-900">
-                                {formatCurrency(day.cost)}
-                              </div>
+                      {dailyUsageData.map((day: DailyUsage, index: number) => (
+                        <div
+                          key={index}
+                          className="p-4 bg-white rounded-lg shadow-sm border border-gray-100"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium text-gray-900">
+                              {new Date(day.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                              <div>
-                                <span className="font-medium">Requests:</span>{" "}
-                                {day.requests.toLocaleString()}
-                              </div>
-                              <div>
-                                <span className="font-medium">
-                                  Cost/Request:
-                                </span>{" "}
-                                {formatCurrency(day.requests > 0 ? day.cost / day.requests : 0)}
-                              </div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {formatCurrency(day.cost)}
                             </div>
                           </div>
-                        )
-                      )}
+                          <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            <div>
+                              <span className="font-medium">Requests:</span>{" "}
+                              {day.requests.toLocaleString()}
+                            </div>
+                            <div>
+                              <span className="font-medium">Cost/Request:</span>{" "}
+                              {formatCurrency(day.cost / day.requests)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Desktop View - Table */}
@@ -629,7 +604,7 @@ export default function CostDashboardEnhanced() {
                                   {formatCurrency(day.cost)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                                  {formatCurrency(day.requests > 0 ? day.cost / day.requests : 0)}
+                                  {formatCurrency(day.cost / day.requests)}
                                 </td>
                               </tr>
                             )

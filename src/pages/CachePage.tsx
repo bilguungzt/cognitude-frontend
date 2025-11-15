@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AxiosError } from "axios";
 import {
   Database,
   Trash2,
@@ -25,23 +24,18 @@ export default function CachePage() {
     isLoading,
     error,
     refetch,
-  } = useApiQuery<CacheStats>(["cache-stats"], async () => {
-    try {
-      return await api.getCacheStats();
-    } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 404) {
-        return {
-          total_entries: 0,
-          total_hits: 0,
-          hit_rate: 0,
-          estimated_savings_usd: 0,
-          redis_available: false,
-          redis_entries: 0,
-          redis_hits: 0,
-        };
-      }
-      throw err;
-    }
+  } = useApiQuery<CacheStats>({
+    queryKey: ["cache-stats"],
+    queryFn: () => api.getCacheStats(),
+    zeroStateOn404: {
+      total_entries: 0,
+      total_hits: 0,
+      hit_rate: 0,
+      estimated_savings_usd: 0,
+      redis_available: false,
+      redis_entries: 0,
+      redis_hits: 0,
+    },
   });
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [clearType, setClearType] = useState<"redis" | "postgresql" | "all">(

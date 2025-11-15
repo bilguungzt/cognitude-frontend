@@ -210,7 +210,10 @@ export default function DashboardPage() {
     isLoading,
     error,
     refetch,
-  } = useApiQuery<DashboardSummaryStats>(["dashboard-summary"], fetchSummary);
+  } = useApiQuery<DashboardSummaryStats>({
+    queryKey: ["dashboard-summary"],
+    queryFn: fetchSummary,
+  });
 
   const computedData = useMemo(() => {
     if (!summary) {
