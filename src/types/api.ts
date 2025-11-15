@@ -398,7 +398,7 @@ export interface EnhancedDashboardData {
     value: string;
     trend: string;
     sparklineData: number[];
-    color: "green" | "blue" | "red";
+    color: "green" | "blue" | "red" | "purple" | "orange";
   }[];
   bestOptimization: {
     originalModel: string;

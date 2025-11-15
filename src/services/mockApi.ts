@@ -85,7 +85,7 @@ class MockCognitudeAPI {
       {
         id: 3,
         organization_id: 1,
-        provider: "huggingface",
+        provider: "google",
         api_key: "sk-...",
         priority: 3,
         enabled: false,
@@ -279,22 +279,13 @@ class MockCognitudeAPI {
   // Cache
   async getCacheStats(): Promise<CacheStats> {
     return {
-      redis: {
-        hits: 1234,
-        misses: 123,
-        hit_rate: 0.9,
-        total_keys: 1357,
-        memory_usage_mb: 12.3,
-      },
-      postgresql: {
-        total_cached_responses: 12345,
-        cost_savings: 123.45,
-        oldest_cache_entry: new Date().toISOString(),
-      },
-      lifetime_savings: {
-        total_cost_saved: 1234.56,
-        requests_served_from_cache: 123456,
-      },
+      total_entries: 4523,
+      total_hits: 3290,
+      hit_rate: 0.72,
+      estimated_savings_usd: 184.37,
+      redis_available: true,
+      redis_entries: 2100,
+      redis_hits: 1750,
     };
   }
 

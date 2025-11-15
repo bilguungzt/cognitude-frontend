@@ -16,6 +16,7 @@ import api from "../services";
 import type { CacheStats } from "../types/api";
 import { useApiQuery } from "../hooks/useApiQuery";
 import Skeleton from "../components/Skeleton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { useToast } from "../components/ToastContainer";
 
 export default function CachePage() {

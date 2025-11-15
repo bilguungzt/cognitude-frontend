@@ -14,7 +14,7 @@ import {
   Book,
 } from "lucide-react";
 
-type LazyPage = LazyExoticComponent<ComponentType<unknown>>;
+type LazyPage = LazyExoticComponent<ComponentType<any>>;
 
 export interface RouteConfig {
   path: string;
