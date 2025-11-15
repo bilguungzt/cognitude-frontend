@@ -107,19 +107,19 @@ export default function CachePage() {
   }
 
   if (!cacheStats) {
-    return (
-      <Layout>
-        <EmptyState
-          icon={Database}
-          title="No cache data available"
-          description="Cache statistics will appear once you start using the proxy."
-          action={{
-            label: "Retry",
+      return (
+          <Layout>
+              <EmptyState
+                  icon={Database}
+                  title="No cache data available"
+                  description="Cache statistics will appear once you start using the proxy."
+                  action={{
+                      label: "Retry",
             onClick: () => refetch(),
-          }}
-        />
-      </Layout>
-    );
+                  }}
+              />
+          </Layout>
+      );
   }
 
   const cacheHitRate = Math.max(0, (cacheStats.hit_rate || 0) * 100);

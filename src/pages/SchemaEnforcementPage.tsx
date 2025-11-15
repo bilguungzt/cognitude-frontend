@@ -87,7 +87,7 @@ const SchemaEnforcementPage: React.FC = () => {
   const overallSuccessRate =
     totalAttempts > 0
       ? (((totalAttempts - totalFailures) / totalAttempts) * 100)
-      : 100;
+    : 100;
   const roundedFailures = Math.round(totalFailures);
 
   if (loading) {

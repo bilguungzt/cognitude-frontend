@@ -79,9 +79,9 @@ export default function CostDashboardEnhanced() {
       try {
         setError("");
         const usage = await api.getUsageStats({
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-          group_by: "day",
+            start_date: dateRange.start,
+            end_date: dateRange.end,
+            group_by: "day",
         });
         setAnalyticsData(usage);
 
@@ -90,15 +90,23 @@ export default function CostDashboardEnhanced() {
             start_date: dateRange.start,
             end_date: dateRange.end,
           });
-          setAutopilotSavingsBreakdown(savingsBreakdown);
-          setAutopilotUnavailable(false);
+          // Validate the response structure before setting state
+          if (savingsBreakdown && typeof savingsBreakdown === 'object') {
+            setAutopilotSavingsBreakdown(savingsBreakdown);
+            setAutopilotUnavailable(false);
+          } else {
+            setAutopilotUnavailable(true);
+            setAutopilotSavingsBreakdown(null);
+          }
         } catch (autopilotErr) {
           const axiosError = autopilotErr as AxiosError;
           if (axiosError.isAxiosError && axiosError.response?.status === 404) {
             setAutopilotUnavailable(true);
             setAutopilotSavingsBreakdown(null);
           } else {
-            setError(api.handleError(autopilotErr));
+            // Don't set error for autopilot failures - just mark as unavailable
+            console.warn('Autopilot savings breakdown unavailable:', api.handleError(autopilotErr));
+            setAutopilotUnavailable(true);
             setAutopilotSavingsBreakdown(null);
           }
         }
@@ -521,7 +529,10 @@ export default function CostDashboardEnhanced() {
                   </div>
                 )}
 
-                {autopilotSavingsBreakdown && !autopilotUnavailable && (
+                {autopilotSavingsBreakdown && 
+                 !autopilotUnavailable && 
+                 typeof autopilotSavingsBreakdown === 'object' &&
+                 Object.keys(autopilotSavingsBreakdown).length > 0 && (
                   <div className="mb-8">
                     <AutopilotSavingsBreakdown
                       data={autopilotSavingsBreakdown}
@@ -567,7 +578,7 @@ export default function CostDashboardEnhanced() {
                                 <span className="font-medium">
                                   Cost/Request:
                                 </span>{" "}
-                                {formatCurrency(day.cost / day.requests)}
+                                {formatCurrency(day.requests > 0 ? day.cost / day.requests : 0)}
                               </div>
                             </div>
                           </div>
@@ -618,7 +629,7 @@ export default function CostDashboardEnhanced() {
                                   {formatCurrency(day.cost)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                                  {formatCurrency(day.cost / day.requests)}
+                                  {formatCurrency(day.requests > 0 ? day.cost / day.requests : 0)}
                                 </td>
                               </tr>
                             )

@@ -156,12 +156,12 @@ const buildDashboardFromSummary = (
   ];
 
   return {
-    heroStats: {
+          heroStats: {
       couldHaveSpent,
       actuallySpent,
       totalSavings,
       projectedMonthlySavings,
-    },
+          },
     keyMetrics,
     bestOptimization: {
       originalModel: "gpt-4o",
@@ -171,25 +171,25 @@ const buildDashboardFromSummary = (
       requestCount: Math.max(autopilotDecisions, 1),
     },
     activityFeed,
-    savingsOverTime: {
+          savingsOverTime: {
       labels: timelineLabels,
-      datasets: [
-        {
-          label: "Cumulative Savings",
+            datasets: [
+              {
+                label: "Cumulative Savings",
           data: cumulativeSavings,
-          borderColor: "#4F46E5",
-          backgroundColor: "rgba(79, 70, 229, 0.1)",
-          fill: true,
-        },
-      ],
-    },
-    cacheVsFresh: {
+                borderColor: "#4F46E5",
+                backgroundColor: "rgba(79, 70, 229, 0.1)",
+                fill: true,
+              },
+            ],
+          },
+          cacheVsFresh: {
       labels: timelineLabels,
-      datasets: [
+            datasets: [
         { label: "Cached", data: cachedSeries, backgroundColor: "#34D399" },
         { label: "Fresh", data: freshSeries, backgroundColor: "#FBBF24" },
-      ],
-    },
+            ],
+          },
   };
 };
 
@@ -202,7 +202,7 @@ export default function DashboardPage() {
         return DEFAULT_SUMMARY;
       }
       throw err;
-    }
+      }
   };
 
   const {
