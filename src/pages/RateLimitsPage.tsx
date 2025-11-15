@@ -54,8 +54,8 @@ export default function RateLimitsPage() {
       try {
         const usage = await api.getUsageStats();
         // Prefer the most recent day's data if available
-        const daily = usage.daily_usage?.length
-          ? usage.daily_usage[usage.daily_usage.length - 1]
+        const daily = usage.usage_by_day?.length
+          ? usage.usage_by_day[usage.usage_by_day.length - 1]
           : null;
         if (daily && typeof daily.requests === "number") {
           const day = Math.round(daily.requests);

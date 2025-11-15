@@ -184,15 +184,19 @@ class MockCognitudeAPI {
     return {
       total_requests: 12345,
       total_cost: 123.45,
-      cache_hits: 1234,
+      average_latency: 250.5,
       cache_hit_rate: 0.1,
-      cost_savings: 12.34,
-      breakdown: [
-        { model: "gpt-4o", requests: 5000, cost: 80.25, tokens: 500000 },
-        { model: "gpt-4o-mini", requests: 7345, cost: 43.2, tokens: 734500 },
-        { model: "claude-3-opus", requests: 1200, cost: 30.0, tokens: 120000 },
+      total_tokens: 1234567,
+      usage_by_day: daily_usage.reverse(),
+      usage_by_provider: [
+        { provider: "openai", requests: 8000, cost: 100.25, avg_latency_ms: 200.5 },
+        { provider: "anthropic", requests: 4345, cost: 23.2, avg_latency_ms: 300.0 },
       ],
-      daily_usage: daily_usage.reverse(),
+      usage_by_model: [
+        { model: "gpt-4o", requests: 5000, cost: 80.25, total_tokens: 500000 },
+        { model: "gpt-4o-mini", requests: 7345, cost: 43.2, total_tokens: 734500 },
+        { model: "claude-3-opus", requests: 1200, cost: 30.0, total_tokens: 120000 },
+      ],
     };
   }
 
