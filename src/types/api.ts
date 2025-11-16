@@ -447,13 +447,21 @@ export interface EnhancedDashboardData {
     prefix?: string;
     suffix?: string;
   }[];
-  bestOptimization: {
+  routingWins: {
     originalModel: string;
     selectedModel: string;
     savingsPerRequest: number;
     totalImpact: number;
-    requestCount: number;
-  };
+    timestamp: string;
+  }[];
+  providerBreakdown: {
+    name: string;
+    requests: number;
+    costUsd: number;
+    latencyMs: number;
+    status: "healthy" | "warning" | "critical";
+    isActive: boolean;
+  }[];
   activityFeed: {
     id: string;
     timestamp: string;

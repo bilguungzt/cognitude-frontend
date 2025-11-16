@@ -105,6 +105,18 @@ const DashboardHero = ({
               Projected monthly savings:{" "}
               <strong>{formatCurrency(heroStats.projectedMonthlySavings)}</strong>
             </p>
+            {heroStats.showEmptyState && (
+              <p className="mt-2 text-sm text-white/80">
+                Route your first 10 requests through Cognitude to unlock live
+                analytics.{" "}
+                <a
+                  href="/setup"
+                  className="underline font-semibold text-white"
+                >
+                  View quickstart →
+                </a>
+              </p>
+            )}
             <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-white/70 border-t border-white/20 pt-4">
               <div>
                 <p className="text-xs uppercase tracking-wide">

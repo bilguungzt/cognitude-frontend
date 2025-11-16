@@ -13,7 +13,8 @@ import Layout from "../components/Layout";
 import { api } from "../services/api";
 import DashboardHero from "../components/Dashboard/DashboardHero";
 import { EnhancedStatCard } from "../components/Dashboard/EnhancedStatCard";
-import BestOptimizationCard from "../components/Dashboard/BestOptimizationCard";
+import SmartRoutingWins from "../components/Dashboard/SmartRoutingWins";
+import ProviderPerformanceCard from "../components/Dashboard/ProviderPerformanceCard";
 import ActivityFeed from "../components/Dashboard/ActivityFeed";
 import SavingsChart from "../components/Dashboard/SavingsChart";
 import CacheChart from "../components/Dashboard/CacheChart";
@@ -182,6 +183,40 @@ const buildDashboardFromSummary = (
       ? totalSavings
       : 0.5;
 
+  const routingWins: EnhancedDashboardData["routingWins"] = [
+    {
+      originalModel: "gpt-4o",
+      selectedModel: "gpt-4o-mini",
+      savingsPerRequest: Number(averageSavingsPerDecision.toFixed(2)),
+      totalImpact: Number(
+        (Math.max(totalSavings, averageSavingsPerDecision * 6) || 0.5).toFixed(2)
+      ),
+      timestamp: new Date().toISOString(),
+    },
+    {
+      originalModel: "claude-3-opus",
+      selectedModel: "claude-3-haiku",
+      savingsPerRequest: Number(
+        (averageSavingsPerDecision * 0.7 + 0.2).toFixed(2)
+      ),
+      totalImpact: Number(
+        (Math.max(totalSavings * 0.4, 4) || 2).toFixed(2)
+      ),
+      timestamp: new Date(Date.now() - 3600 * 1000).toISOString(),
+    },
+    {
+      originalModel: "gpt-4",
+      selectedModel: "gpt-3.5-turbo",
+      savingsPerRequest: Number(
+        (averageSavingsPerDecision * 0.5 + 0.15).toFixed(2)
+      ),
+      totalImpact: Number(
+        (Math.max(totalSavings * 0.25, 3) || 1.5).toFixed(2)
+      ),
+      timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    },
+  ];
+
   const activityFeed: EnhancedDashboardData["activityFeed"] = [
     {
       id: "activity-1",
@@ -235,6 +270,24 @@ const buildDashboardFromSummary = (
       : validationFailures > 0
       ? "warning"
       : "healthy";
+
+  const providerBreakdown = providers.map((provider, idx) => {
+    const share = provider.isActive ? [0.6, 0.25, 0.15][idx] ?? 0.1 : 0.05;
+    const requests = provider.isActive
+      ? Math.max(1, Math.round(totalRequests * share))
+      : 0;
+    const costUsd = Number(
+      (requests * (0.04 + idx * 0.015) || 0).toFixed(2)
+    );
+    return {
+      name: provider.name,
+      status: provider.status,
+      latencyMs: provider.latencyMs || 950 + idx * 80,
+      isActive: provider.isActive,
+      requests,
+      costUsd,
+    };
+  });
 
   const quickActions = [
     {
@@ -297,13 +350,8 @@ const buildDashboardFromSummary = (
     quickActions,
     recommendation,
     keyMetrics,
-    bestOptimization: {
-      originalModel: "gpt-4o",
-      selectedModel: "gpt-4o-mini",
-      savingsPerRequest: Number(averageSavingsPerDecision.toFixed(2)),
-      totalImpact: totalSavings,
-      requestCount: Math.max(autopilotDecisions, 1),
-    },
+    routingWins,
+    providerBreakdown,
     activityFeed,
     savingsOverTime: {
       labels: timelineLabels,
@@ -426,20 +474,28 @@ export default function DashboardPage() {
           />
         </motion.div>
 
-        {/* Highlights */}
+        {/* Routing Wins & Providers */}
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           variants={itemVariants}
         >
-          <BestOptimizationCard
-            originalModel={computedData.bestOptimization.originalModel}
-            selectedModel={computedData.bestOptimization.selectedModel}
-            savingsPerRequest={computedData.bestOptimization.savingsPerRequest}
-            totalImpact={computedData.bestOptimization.totalImpact}
-            requestCount={computedData.bestOptimization.requestCount}
+          <div className="lg:col-span-2">
+            <SmartRoutingWins wins={computedData.routingWins} />
+          </div>
+          <ProviderPerformanceCard
+            providers={computedData.providerBreakdown}
           />
+        </motion.div>
+
+        {/* Recommendations & Live Activity */}
+        <motion.div
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          variants={itemVariants}
+        >
           <RecommendationCard {...computedData.recommendation} />
-          <ActivityFeed events={computedData.activityFeed} />
+          <div className="lg:col-span-2">
+            <ActivityFeed events={computedData.activityFeed} />
+          </div>
         </motion.div>
 
         {/* Key Metrics */}
