@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AxiosError } from "axios";
 import {
@@ -15,6 +15,7 @@ import DashboardHero from "../components/Dashboard/DashboardHero";
 import { EnhancedStatCard } from "../components/Dashboard/EnhancedStatCard";
 import SmartRoutingWins from "../components/Dashboard/SmartRoutingWins";
 import ProviderPerformanceCard from "../components/Dashboard/ProviderPerformanceCard";
+import ConfettiCelebration from "../components/ConfettiCelebration";
 import ActivityFeed from "../components/Dashboard/ActivityFeed";
 import SavingsChart from "../components/Dashboard/SavingsChart";
 import CacheChart from "../components/Dashboard/CacheChart";
@@ -376,6 +377,7 @@ const buildDashboardFromSummary = (
 };
 
 export default function DashboardPage() {
+  const [confettiDismissed, setConfettiDismissed] = useState(false);
   const fetchSummary = async () => {
     try {
       return await api.getDashboardSummaryStatistics();
@@ -451,94 +453,106 @@ export default function DashboardPage() {
       })
     );
 
-    const cacheChartData = computedData.cacheVsFresh.labels.map((label, index) => ({
-      time: label,
-      cached: computedData.cacheVsFresh.datasets[0].data[index],
-      fresh: computedData.cacheVsFresh.datasets[1].data[index],
-    }));
+    const cacheChartData = computedData.cacheVsFresh.labels.map(
+      (label, index) => ({
+        time: label,
+        cached: computedData.cacheVsFresh.datasets[0].data[index],
+        fresh: computedData.cacheVsFresh.datasets[1].data[index],
+      })
+    );
+
+    const milestoneUnlocked =
+      computedData.heroStats.totalSavings >= 100 && !confettiDismissed;
 
     return (
-      <motion.div
-        className="space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Hero Section */}
-        <motion.div variants={itemVariants}>
-          <DashboardHero
-            heroStats={computedData.heroStats}
-            systemStatus={computedData.systemStatus}
-            requestStats={computedData.requestStats}
-            quickActions={computedData.quickActions}
-          />
-        </motion.div>
-
-        {/* Routing Wins & Providers */}
+      <>
+        <ConfettiCelebration
+          active={milestoneUnlocked}
+          message="🎉 Milestone unlocked! You’ve saved your first $100 with Cognitude."
+          onClose={() => setConfettiDismissed(true)}
+        />
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          variants={itemVariants}
+          className="space-y-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
         >
-          <div className="lg:col-span-2">
-            <SmartRoutingWins wins={computedData.routingWins} />
-          </div>
-          <ProviderPerformanceCard
-            providers={computedData.providerBreakdown}
-          />
-        </motion.div>
+          {/* Hero Section */}
+          <motion.div variants={itemVariants}>
+            <DashboardHero
+              heroStats={computedData.heroStats}
+              systemStatus={computedData.systemStatus}
+              requestStats={computedData.requestStats}
+              quickActions={computedData.quickActions}
+            />
+          </motion.div>
 
-        {/* Recommendations & Live Activity */}
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          variants={itemVariants}
-        >
-          <RecommendationCard {...computedData.recommendation} />
-          <div className="lg:col-span-2">
-            <ActivityFeed events={computedData.activityFeed} />
-          </div>
-        </motion.div>
+          {/* Routing Wins & Providers */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            variants={itemVariants}
+          >
+            <div className="lg:col-span-2">
+              <SmartRoutingWins wins={computedData.routingWins} />
+            </div>
+            <ProviderPerformanceCard
+              providers={computedData.providerBreakdown}
+            />
+          </motion.div>
 
-        {/* Key Metrics */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
-          variants={itemVariants}
-        >
-          {computedData.keyMetrics.map((metric, index) => {
-            const icons = [Zap, Activity, Gauge, ShieldCheck];
-            const Icon = icons[index % icons.length];
-            return (
-              <EnhancedStatCard
-                key={metric.title}
-                title={metric.title}
-                value={metric.value}
-                trend={metric.trend}
-                sparklineData={metric.sparklineData.map((value, name) => ({
-                  name: name.toString(),
-                  value,
-                }))}
-                color={metric.color}
-                tooltipText={metric.title}
-                icon={Icon}
-                prefix={metric.prefix}
-                suffix={metric.suffix}
-              />
-            );
-          })}
-        </motion.div>
+          {/* Recommendations & Live Activity */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            variants={itemVariants}
+          >
+            <RecommendationCard {...computedData.recommendation} />
+            <div className="lg:col-span-2">
+              <ActivityFeed events={computedData.activityFeed} />
+            </div>
+          </motion.div>
 
-        {/* Charts */}
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-5 gap-8"
-          variants={itemVariants}
-        >
-          <div className="lg:col-span-3">
-            <SavingsChart data={savingsChartData} />
-          </div>
-          <div className="lg:col-span-2">
-            <CacheChart data={cacheChartData} />
-          </div>
+          {/* Key Metrics */}
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
+            variants={itemVariants}
+          >
+            {computedData.keyMetrics.map((metric, index) => {
+              const icons = [Zap, Activity, Gauge, ShieldCheck];
+              const Icon = icons[index % icons.length];
+              return (
+                <EnhancedStatCard
+                  key={metric.title}
+                  title={metric.title}
+                  value={metric.value}
+                  trend={metric.trend}
+                  sparklineData={metric.sparklineData.map((value, name) => ({
+                    name: name.toString(),
+                    value,
+                  }))}
+                  color={metric.color}
+                  tooltipText={metric.title}
+                  icon={Icon}
+                  prefix={metric.prefix}
+                  suffix={metric.suffix}
+                />
+              );
+            })}
+          </motion.div>
+
+          {/* Charts */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-5 gap-8"
+            variants={itemVariants}
+          >
+            <div className="lg:col-span-3">
+              <SavingsChart data={savingsChartData} />
+            </div>
+            <div className="lg:col-span-2">
+              <CacheChart data={cacheChartData} />
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </>
     );
   };
 

@@ -30,9 +30,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
         <h3 className="text-lg font-semibold text-gray-900">Live Signals</h3>
         <a
           href="/logs"
-          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
         >
-          View logs →
+          View activity log →
         </a>
       </div>
       {events.length === 0 ? (

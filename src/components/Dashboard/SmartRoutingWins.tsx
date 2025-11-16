@@ -44,6 +44,8 @@ const SmartRoutingWins: React.FC<SmartRoutingWinsProps> = ({ wins }) => {
   }
 
   const [topWin, ...otherWins] = wins;
+  const estimatedSpend = topWin.totalImpact + 150.5;
+  const savingsPercent = (topWin.totalImpact / estimatedSpend) * 100;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-emerald-500/90 to-sky-500/90 text-white p-6 shadow-sm flex flex-col h-full">
@@ -65,6 +67,10 @@ const SmartRoutingWins: React.FC<SmartRoutingWinsProps> = ({ wins }) => {
           Total impact: {formatCurrency(topWin.totalImpact)} today
         </p>
       </div>
+      <p className="text-sm text-white mt-4">
+        💡 Without smart routing you’d have spent {formatCurrency(estimatedSpend)}.
+        Your savings: {savingsPercent.toFixed(1)}%.
+      </p>
       {otherWins.length > 0 && (
         <div className="mt-6 bg-white/10 rounded-xl p-4 flex-1">
           <p className="text-sm font-semibold mb-2 text-white">

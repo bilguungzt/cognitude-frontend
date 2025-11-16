@@ -22,6 +22,13 @@ const statusColor: Record<ProviderRow["status"], string> = {
 const ProviderPerformanceCard: React.FC<ProviderPerformanceCardProps> = ({
   providers,
 }) => {
+  const formatStatus = (provider: ProviderRow) => {
+    if (!provider.isActive) return "Ready";
+    if (provider.status === "healthy") return "Active";
+    if (provider.status === "warning") return "Monitoring";
+    return "Issue";
+  };
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm h-full">
       <div className="flex items-center justify-between mb-4">
@@ -55,16 +62,16 @@ const ProviderPerformanceCard: React.FC<ProviderPerformanceCardProps> = ({
               </div>
               <div className="text-right">
                 <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${statusColor[provider.status]}`}
+                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                    provider.isActive
+                      ? statusColor[provider.status]
+                      : "text-gray-500 bg-gray-100"
+                  }`}
                 >
-                  {provider.status === "healthy"
-                    ? "Healthy"
-                    : provider.status === "warning"
-                    ? "Degraded"
-                    : "Issue"}
+                  {provider.isActive ? formatStatus(provider) : "Ready"}
                 </span>
                 <p className="text-gray-500 text-xs mt-1">
-                  {provider.isActive ? `${provider.latencyMs} ms avg` : "idle"}
+                  {provider.isActive ? `${provider.latencyMs} ms avg` : "Awaiting traffic"}
                 </p>
               </div>
             </div>
