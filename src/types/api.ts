@@ -457,7 +457,7 @@ export interface EnhancedDashboardData {
   activityFeed: {
     id: string;
     timestamp: string;
-    type: string;
+    type: "routing" | "caching" | "security";
     description: string;
   }[];
   savingsOverTime: {

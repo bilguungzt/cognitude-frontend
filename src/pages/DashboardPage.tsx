@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Gauge,
   Loader,
-  Server,
   Zap,
   ShieldCheck,
 } from "lucide-react";
@@ -93,8 +92,6 @@ const buildDashboardFromSummary = (
     summary.validationFailuresLast24h ?? 0,
     0
   );
-  const activeSchemas = Math.max(summary.activeSchemas ?? 0, 0);
-
   const couldHaveSpent = totalSavings > 0 ? totalSavings * 2 + 500 : 2000;
   const actuallySpent = Math.max(couldHaveSpent - totalSavings, 0);
   const projectedMonthlySavings = totalSavings
@@ -185,7 +182,7 @@ const buildDashboardFromSummary = (
       ? totalSavings
       : 0.5;
 
-  const activityFeed = [
+  const activityFeed: EnhancedDashboardData["activityFeed"] = [
     {
       id: "activity-1",
       timestamp: new Date().toISOString(),
