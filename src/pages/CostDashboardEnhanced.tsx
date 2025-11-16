@@ -5,6 +5,8 @@ import type {
   UsageStats,
   DailyUsage,
   AutopilotSavingsBreakdown as AutopilotSavingsBreakdownType,
+  AutopilotSavings,
+  AutopilotModelRouting,
 } from "../types/api";
 import {
   BarChart,
@@ -16,6 +18,9 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   Calendar,
@@ -24,11 +29,33 @@ import {
   DollarSign,
   Download,
   RefreshCw,
+  PieChart as PieChartIcon,
+  ShieldCheck,
 } from "lucide-react";
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
-import CostReconciliationCard from "../components/Dashboard/CostReconciliationCard";
+
+const DEFAULT_SAVINGS_BREAKDOWN = [
+  { label: "Smart Routing", amount: 450 },
+  { label: "Caching", amount: 350 },
+  { label: "Rate Optimization", amount: 200 },
+];
+
+const DEFAULT_ROUTING_SHARE = [
+  { model: "gpt-4o-mini", percentage: 62 },
+  { model: "claude-sonnet", percentage: 24 },
+  { model: "gpt-4o", percentage: 14 },
+];
+
+const ROUTING_COLORS = [
+  "#8b5cf6",
+  "#0ea5e9",
+  "#10b981",
+  "#f97316",
+  "#facc15",
+  "#ec4899",
+];
 
 export default function CostDashboardEnhanced() {
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
@@ -81,17 +108,42 @@ export default function CostDashboardEnhanced() {
     enabled: isValidDateRange,
   });
 
+  const autopilotSavings = useApiQuery<AutopilotSavings>({
+    queryKey: ["autopilot-savings", dateRange.start, dateRange.end],
+    queryFn: () => api.getAutopilotSavings(),
+    zeroStateOn404: { cost_savings: 0, cache_hit_rate: 0 },
+    enabled: isValidDateRange,
+  });
+
+  const autopilotModelRouting = useApiQuery<AutopilotModelRouting>({
+    queryKey: ["autopilot-model-routing", dateRange.start, dateRange.end],
+    queryFn: () => api.getAutopilotModelRouting(),
+    zeroStateOn404: {},
+    enabled: isValidDateRange,
+  });
+
   const loading =
     isValidDateRange &&
-    (analyticsData.isLoading || autopilotSavingsBreakdown.isLoading);
+    (analyticsData.isLoading ||
+      autopilotSavingsBreakdown.isLoading ||
+      autopilotSavings.isLoading ||
+      autopilotModelRouting.isLoading);
   const error =
-    isValidDateRange && (analyticsData.error || autopilotSavingsBreakdown.error)
-      ? String(analyticsData.error || autopilotSavingsBreakdown.error)
-      : null;
-  const autopilotUnavailable =
     isValidDateRange &&
+    (analyticsData.error ||
+      autopilotSavingsBreakdown.error ||
+      autopilotSavings.error ||
+      autopilotModelRouting.error)
+      ? String(
+          analyticsData.error ||
+            autopilotSavingsBreakdown.error ||
+            autopilotSavings.error ||
+            autopilotModelRouting.error
+        )
+      : null;
+  const autopilotBreakdownAvailable =
     autopilotSavingsBreakdown.data &&
-    Object.keys(autopilotSavingsBreakdown.data).length === 0;
+    Object.keys(autopilotSavingsBreakdown.data).length > 0;
 
   const handleRefresh = () => {
     if (isValidDateRange) {
