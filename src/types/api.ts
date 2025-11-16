@@ -169,6 +169,23 @@ export interface CacheStats {
   redis_available?: boolean;
   redis_entries?: number;
   redis_hits?: number;
+  last_cache_hit_at?: string | null;
+  storage_size_bytes?: number | null;
+  ttl_hours?: number | null;
+  max_cache_size_bytes?: number | null;
+  exclude_patterns?: string[];
+  auto_invalidation_enabled?: boolean;
+  top_cached_endpoints?: {
+    endpoint: string;
+    hit_rate: number;
+    savings_usd: number;
+  }[];
+  most_frequent_response?: {
+    endpoint: string;
+    model: string;
+    summary: string;
+    savings_usd: number;
+  } | null;
 }
 
 export interface CacheClearRequest {
