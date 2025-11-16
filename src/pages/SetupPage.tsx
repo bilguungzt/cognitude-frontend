@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 // navigate not needed in this page; Layout handles navigation
 import Layout from "../components/Layout";
@@ -11,6 +11,52 @@ type ProviderType =
   | "Google AI"
   | "Cohere";
 type IntegrationOption = "python" | "nodejs" | "curl" | "rest";
+
+const providerBackendMap: Record<ProviderType, string> = {
+  OpenAI: "openai",
+  Anthropic: "anthropic",
+  "Hugging Face": "huggingface",
+  "Google AI": "google",
+  Cohere: "cohere",
+};
+
+const providerDocs: Record<
+  ProviderType,
+  { label: string; url: string; hint: string }
+> = {
+  OpenAI: {
+    label: "OpenAI Dashboard",
+    url: "https://platform.openai.com/api-keys",
+    hint: "Requires paid project key (sk-proj-...)",
+  },
+  Anthropic: {
+    label: "Anthropic Console",
+    url: "https://console.anthropic.com/settings/keys",
+    hint: "Claude 3 keys start with sk-ant-",
+  },
+  "Hugging Face": {
+    label: "Hugging Face Settings",
+    url: "https://huggingface.co/settings/tokens",
+    hint: "Use Inference API token",
+  },
+  "Google AI": {
+    label: "Google AI Studio",
+    url: "https://makersuite.google.com/app/apikey",
+    hint: "Enable Gemini 1.5 access in Google Cloud",
+  },
+  Cohere: {
+    label: "Cohere Account",
+    url: "https://dashboard.cohere.com/api-keys",
+    hint: "Copy the server-side token",
+  },
+};
+
+const securityHighlights = [
+  "API keys shown only once — we never store raw keys.",
+  "Provider credentials encrypted with AES-256/Fernet using your tenant key.",
+  "Each organization is fully isolated (separate API digests, rate limits, and cache).",
+  "SOC 2 controls in progress; audit trails logged for every request.",
+];
 
 export default function SetupPage() {
   const { apiKey } = useAuth();
@@ -30,6 +76,9 @@ export default function SetupPage() {
   const [testResult, setTestResult] = useState<string>(
     "⏳ Waiting for test request..."
   );
+  const [testRequestStatus, setTestRequestStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [copied, setCopied] = useState<string>("");
   const [selectedIntegration, setSelectedIntegration] =
     useState<IntegrationOption>("python");
@@ -38,7 +87,97 @@ export default function SetupPage() {
   const [providerTestResult, setProviderTestResult] = useState<string>("");
   const [providerSaveLoading, setProviderSaveLoading] =
     useState<boolean>(false);
+  const [providerConfigured, setProviderConfigured] = useState<boolean>(false);
+  const [apiKeyAcknowledged, setApiKeyAcknowledged] = useState<boolean>(() => {
+    return localStorage.getItem("cognitude_api_key_ack") === "true";
+  });
+  const [rateLimits, setRateLimits] = useState<{
+    minute: number;
+    hour: number;
+    day: number;
+  } | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string>("");
+  const [alertsConfigured, setAlertsConfigured] = useState<boolean>(false);
   // logout and navigate hooks are provided by Layout; not used directly in this page
+  const progressSteps = useMemo(
+    () => [
+      {
+        id: 1,
+        label: "Save your Cognitude API key",
+        completed: apiKeyAcknowledged,
+        description: "Copy and store the one-time key securely.",
+      },
+      {
+        id: 2,
+        label: "Connect at least one provider",
+        completed: providerConfigured,
+        description: "Add OpenAI, Anthropic, Google, or another provider key.",
+      },
+      {
+        id: 3,
+        label: "Send a live test request",
+        completed: testRequestStatus === "success",
+        description: "Verify Cognitude proxy returns real responses.",
+      },
+      {
+        id: 4,
+        label: "Enable alerts & monitoring",
+        completed: alertsConfigured,
+        description: "Configure Slack/email/webhook alerts for cost guardrails.",
+      },
+    ],
+    [apiKeyAcknowledged, providerConfigured, testRequestStatus, alertsConfigured]
+  );
+
+  const setupComplete = progressSteps.every((step) => step.completed);
+  const providerStepDisabled = !apiKeyAcknowledged;
+
+  useEffect(() => {
+    const bootstrapSetupState = async () => {
+      try {
+        const [providersResponse, limitsResponse, alertsResponse] =
+          await Promise.allSettled([
+            (api as any).getProviders?.(),
+            (api as any).getRateLimitConfig?.(),
+            (api as any).getAlertChannels?.(),
+          ]);
+        if (
+          alertsResponse.status === "fulfilled" &&
+          alertsResponse.value?.length
+        ) {
+          setAlertsConfigured(true);
+        }
+
+        if (
+          providersResponse.status === "fulfilled" &&
+          providersResponse.value?.length > 0
+        ) {
+          setProviderConfigured(true);
+        }
+
+        if (
+          limitsResponse.status === "fulfilled" &&
+          limitsResponse.value
+        ) {
+          setRateLimits({
+            minute: limitsResponse.value.requests_per_minute,
+            hour: limitsResponse.value.requests_per_hour,
+            day: limitsResponse.value.requests_per_day,
+          });
+        } else if (limitsResponse.status === "rejected") {
+          setRateLimitError(
+            "Unable to load current rate limits. Defaults: 100/min, 3,000/hour, 50k/day."
+          );
+        }
+      } catch {
+        setRateLimitError(
+          "Unable to load current rate limits. Defaults: 100/min, 3,000/hour, 50k/day."
+        );
+      }
+    };
+
+    bootstrapSetupState();
+  }, []);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -46,17 +185,65 @@ export default function SetupPage() {
     setTimeout(() => setCopied(""), 2000);
   };
 
-  const handleTestRequest = async () => {
-    setTestLoading(true);
-    setTestResult("⏳ Sending test request...");
+  const handleApiKeyAcknowledgement = (checked: boolean) => {
+    setApiKeyAcknowledged(checked);
+    localStorage.setItem("cognitude_api_key_ack", checked ? "true" : "false");
+  };
 
-    // Simulate API call
-    setTimeout(() => {
+  const handleTestRequest = async () => {
+    if (!providerConfigured) {
       setTestResult(
-        `✅ Success! Test completed on ${testProvider} using ${testModel}.\nRequest: "${testMessage}"\nTemperature: ${testTemperature}\n\nResponse: "Hello! This is a simulated response from Cognitude."`
+        "❌ Connect at least one provider before sending a live request."
       );
+      setTestRequestStatus("error");
+      return;
+    }
+
+    setTestLoading(true);
+    setTestResult("⏳ Sending live request through Cognitude...");
+    setTestRequestStatus("idle");
+
+    try {
+      const response = await (api as any).chatCompletion({
+        model: testModel,
+        messages: [{ role: "user", content: testMessage }],
+        temperature: testTemperature,
+        provider: providerBackendMap[testProvider],
+      });
+
+      const metadata = (response as any)?.["x_cognitude"] || {};
+      setTestResult(
+        [
+          "✅ Live request successful!",
+          `Provider: ${metadata.provider || testProvider}`,
+          `Model: ${response.model || testModel}`,
+          `Latency: ${metadata.latency_ms ?? "—"} ms`,
+          `Cost: ${
+            metadata.cost_usd !== undefined
+              ? `$${Number(metadata.cost_usd).toFixed(4)}`
+              : "see dashboard"
+          }`,
+          "",
+          `Response Preview: ${
+            response.choices?.[0]?.message?.content?.slice(0, 200) ||
+            "No content returned"
+          }`,
+        ].join("\n")
+      );
+      setTestRequestStatus("success");
+    } catch (error: any) {
+      const detail =
+        error?.response?.data?.detail ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Unknown error";
+      setTestResult(
+        `❌ Test failed: ${detail}\n\nTroubleshooting:\n• Ensure your Cognitude API key is active (Step 1)\n• Verify ${selectedProvider} key has credits & access to ${testModel}\n• Try a simpler model like gpt-3.5-turbo or claude-3-haiku`
+      );
+      setTestRequestStatus("error");
+    } finally {
       setTestLoading(false);
-    }, 2000);
+    }
   };
 
   const handleTestProviderConnection = async () => {
@@ -69,19 +256,8 @@ export default function SetupPage() {
     setProviderTestResult("⏳ Testing connection...");
 
     try {
-      // Map frontend provider names to backend names
-      const providerMap: Record<ProviderType, string> = {
-        OpenAI: "openai",
-        Anthropic: "anthropic",
-        "Hugging Face": "huggingface",
-        "Google AI": "google",
-        Cohere: "cohere",
-      };
-
-      const backendProvider = providerMap[selectedProvider];
-
       const result = await (api as any).testProvider({
-        provider: backendProvider,
+        provider: providerBackendMap[selectedProvider],
         api_key: providerApiKey,
         enabled: true,
         priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3,
@@ -108,19 +284,8 @@ export default function SetupPage() {
     setProviderSaveLoading(true);
 
     try {
-      // Map frontend provider names to backend names
-      const providerMap: Record<ProviderType, string> = {
-        OpenAI: "openai",
-        Anthropic: "anthropic",
-        "Hugging Face": "huggingface",
-        "Google AI": "google",
-        Cohere: "cohere",
-      };
-
-      const backendProvider = providerMap[selectedProvider];
-
       await api.createProvider({
-        provider: backendProvider as any,
+        provider: providerBackendMap[selectedProvider] as any,
         api_key: providerApiKey,
         enabled: true,
         priority: priority === "High" ? 1 : priority === "Medium" ? 2 : 3,
@@ -128,6 +293,7 @@ export default function SetupPage() {
 
       alert("Provider saved successfully!");
       setProviderApiKey(""); // Clear the form
+      setProviderConfigured(true);
     } catch (error: any) {
       alert(
         `Failed to save provider: ${
@@ -327,6 +493,106 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
           </div>
         </div>
 
+        {/* Progress Tracker */}
+        <div className="card mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-text-primary">
+              Setup Progress
+            </h3>
+            {setupComplete ? (
+              <span className="flex items-center gap-2 text-green-600 font-semibold">
+                <span className="text-2xl">✅</span> Ready to ship!
+              </span>
+            ) : (
+              <span className="text-text-secondary text-sm">
+                Complete each step to unlock the next.
+              </span>
+            )}
+          </div>
+          <div className="space-y-4">
+            {progressSteps.map((step) => (
+              <div
+                key={step.id}
+                className={`flex items-start gap-3 rounded-lg border p-4 ${
+                  step.completed
+                    ? "border-green-200 bg-green-50"
+                    : "border-border-secondary bg-bg-primary/50"
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 flex items-center justify-center rounded-full text-sm font-semibold ${
+                    step.completed
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-200 text-text-secondary"
+                  }`}
+                >
+                  {step.completed ? "✓" : step.id}
+                </div>
+                <div>
+                  <p className="font-semibold text-text-primary">
+                    {step.label}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Security & Trust */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="card border border-blue-100 bg-blue-50">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3">
+              🔐 Enterprise-grade Security
+            </h3>
+            <ul className="space-y-2 text-sm text-blue-900">
+              {securityHighlights.map((highlight) => (
+                <li key={highlight} className="flex items-start gap-2">
+                  <span>•</span>
+                  <span>{highlight}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card">
+            <h3 className="text-lg font-semibold text-text-primary mb-3">
+              📈 Default Rate Limits
+            </h3>
+            {rateLimits ? (
+              <div className="grid grid-cols-3 gap-4 text-center">
+                {[
+                  { label: "Minute", value: rateLimits.minute },
+                  { label: "Hour", value: rateLimits.hour },
+                  { label: "Day", value: rateLimits.day },
+                ].map((limit) => (
+                  <div key={limit.label}>
+                    <div className="text-2xl font-bold text-text-primary">
+                      {limit.value.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-text-secondary">
+                      req/{limit.label.toLowerCase()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-text-secondary text-sm">{rateLimitError}</p>
+            )}
+            <div className="mt-3 text-sm text-text-secondary">
+              Need more headroom?{" "}
+              <a
+                href="/rate-limits"
+                className="text-blue-600 font-medium hover:underline"
+              >
+                Request a limit increase
+              </a>
+              .
+            </div>
+          </div>
+        </div>
+
         {/* Step 1: Get Your API Key */}
         <div className="card mb-8">
           <h3 className="text-xl font-bold text-text-primary mb-6">
@@ -336,6 +602,11 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
             Your API key authenticates all requests to Cognitude and tracks your
             usage.
           </p>
+          <div className="bg-red-50 border border-red-200 text-red-900 rounded-lg p-4 mb-4 text-sm">
+            <strong>Security warning:</strong> This key is shown only once. Copy
+            and store it in a password manager. Lose it and you must generate a
+            new organization.
+          </div>
 
           <div className="bg-bg-secondary border border-border-primary rounded-lg p-4 mb-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -356,6 +627,23 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
               to use it.
             </p>
           </div>
+          <label className="flex items-start gap-3 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={apiKeyAcknowledged}
+              onChange={(e) => handleApiKeyAcknowledgement(e.target.checked)}
+            />
+            <span>
+              I confirm I’ve securely stored this key. I understand it cannot be
+              retrieved again and is required for all API calls.
+            </span>
+          </label>
+          {!apiKeyAcknowledged && (
+            <p className="text-xs text-red-600 mt-2">
+              ✅ Please acknowledge before moving to Step 2.
+            </p>
+          )}
         </div>
 
         {/* Step 2: Connect Your LLM Provider */}
@@ -368,7 +656,18 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
             can proxy and optimize your requests.
           </p>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          {providerStepDisabled && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 rounded-lg p-4 mb-4 text-sm">
+              Finish Step 1 first: copy and acknowledge your Cognitude API key
+              to unlock provider configuration.
+            </div>
+          )}
+
+          <div
+            className={`bg-blue-50 border border-blue-200 rounded-lg p-4 ${
+              providerStepDisabled ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
             <div className="flex flex-wrap gap-4 mb-4">
               {providerOptions.map((provider) => (
                 <button
@@ -383,6 +682,18 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
                   {provider}
                 </button>
               ))}
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm text-blue-900 mb-4">
+              <span className="font-semibold">Where to find your key:</span>
+              <a
+                className="text-blue-700 underline"
+                href={providerDocs[selectedProvider].url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {providerDocs[selectedProvider].label}
+              </a>
+              <span>• {providerDocs[selectedProvider].hint}</span>
             </div>
 
             <div className="mb-4">
@@ -417,11 +728,14 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
                     USD
                   </span>
                 </div>
+                <p className="text-xs text-text-secondary mt-1">
+                  Budget alerts use this number to warn you when spending spikes.
+                </p>
               </div>
 
-              <div className="w-full sm:w-48">
+              <div className="w-full sm:w-52">
                 <label className="block text-sm font-medium text-text-secondary mb-1">
-                  Priority:
+                  Priority & Failover
                 </label>
                 <div className="flex gap-2">
                   {(["High", "Medium", "Low"] as const).map((p) => (
@@ -438,10 +752,14 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-text-secondary mt-2">
+                  Priority 1 = primary provider. Cognitude automatically tries
+                  lower priorities if the current provider errors or rate limits.
+                </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <button
                 onClick={handleTestProviderConnection}
                 disabled={providerTestLoading}
@@ -456,6 +774,12 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
               >
                 {providerSaveLoading ? "Saving..." : "Save Provider"}
               </button>
+              <a
+                href="/providers"
+                className="px-6 py-2 bg-bg-primary border border-border-secondary rounded-lg text-text-secondary hover:text-text-primary"
+              >
+                Manage Providers
+              </a>
             </div>
 
             {providerTestResult && (
@@ -469,6 +793,19 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
                 >
                   {providerTestResult}
                 </p>
+                {!providerTestResult.includes("✅") && (
+                  <ul className="mt-3 text-sm text-text-secondary space-y-1">
+                    <li>• Confirm the key has access to the selected model.</li>
+                    <li>
+                      • Ensure the provider account has credits and is not rate
+                      limited.
+                    </li>
+                    <li>
+                      • Try testing directly via provider console to confirm the
+                      key works.
+                    </li>
+                  </ul>
+                )}
               </div>
             )}
           </div>
@@ -837,11 +1174,67 @@ console.log('💰 Saved $' + savings.totalSaved + ' this month');`,
               className={`${
                 testResult.includes("Success")
                   ? "text-success-600"
+                  : testRequestStatus === "error"
+                  ? "text-error-600"
                   : "text-text-secondary"
               }`}
             >
               {testResult}
             </p>
+            <p className="text-xs text-text-secondary mt-3">
+              Tip: We recommend running a second request with the same payload to
+              confirm caching works (expect response in &lt;100ms and cost $0).
+            </p>
+          </div>
+        </div>
+
+        {/* Setup Checklist */}
+        <div className="card mb-8">
+          <h3 className="text-xl font-bold text-text-primary mb-6">
+            ✅ Setup Checklist
+          </h3>
+          <div className="space-y-3">
+            {progressSteps.map((step) => (
+              <div
+                key={`checklist-${step.id}`}
+                className="flex items-start gap-3"
+              >
+                <span
+                  className={`mt-1 text-lg ${
+                    step.completed ? "text-green-600" : "text-gray-400"
+                  }`}
+                >
+                  {step.completed ? "✓" : "•"}
+                </span>
+                <div>
+                  <p className="font-semibold text-text-primary">{step.label}</p>
+                  <p className="text-sm text-text-secondary">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <a
+              href="/dashboard"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </a>
+            <a
+              href="/alerts"
+              className="px-4 py-2 bg-bg-primary border border-border-secondary rounded-lg hover:text-text-primary"
+              onClick={() => setAlertsConfigured(true)}
+            >
+              Configure Alerts
+            </a>
+            <a
+              href="/providers"
+              className="px-4 py-2 bg-bg-primary border border-border-secondary rounded-lg hover:text-text-primary"
+            >
+              Manage Providers
+            </a>
           </div>
         </div>
 
@@ -912,9 +1305,12 @@ response2 = client.chat.completions.create(
                     Estimated Savings:{" "}
                     <span className="font-semibold">$28.32/month</span>
                   </span>
-                  <button className="text-blue-600 hover:underline text-sm font-medium">
+                  <a
+                    href="/cache"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                  >
                     Configure Cache Settings
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -974,9 +1370,12 @@ response2 = client.chat.completions.create(
                       in requests
                     </li>
                   </ol>
-                  <button className="text-blue-600 hover:underline text-sm font-medium">
+                  <a
+                    href="/autopilot"
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                  >
                     Configure Smart Routing
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -1479,7 +1878,10 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
             🎯 Next Steps
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors">
+            <a
+              href="/dashboard"
+              className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors"
+            >
               <div className="flex items-center">
                 <div className="bg-blue-100 p-2 rounded-lg mr-3">
                   <svg
@@ -1509,9 +1911,12 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
               <span className="text-blue-600 font-medium">
                 Go to Dashboard {"→"}
               </span>
-            </button>
+            </a>
 
-            <button className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors">
+            <a
+              href="/providers"
+              className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors"
+            >
               <div className="flex items-center">
                 <div className="bg-green-100 p-2 rounded-lg mr-3">
                   <svg
@@ -1541,9 +1946,12 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
               <span className="text-blue-600 font-medium">
                 Add Providers {"→"}
               </span>
-            </button>
+            </a>
 
-            <button className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors">
+            <a
+              href="/alerts"
+              className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors"
+            >
               <div className="flex items-center">
                 <div className="bg-yellow-100 p-2 rounded-lg mr-3">
                   <svg
@@ -1570,9 +1978,12 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
               <span className="text-blue-600 font-medium">
                 Configure Alerts {"→"}
               </span>
-            </button>
+            </a>
 
-            <button className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors">
+            <a
+              href="/analytics"
+              className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-bg-secondary transition-colors"
+            >
               <div className="flex items-center">
                 <div className="bg-purple-100 p-2 rounded-lg mr-3">
                   <svg
@@ -1602,7 +2013,7 @@ print(f"Used {response.model} - saved \${response.savings_usd:.4f}")
               <span className="text-blue-600 font-medium">
                 View Recommendations {"→"}
               </span>
-            </button>
+            </a>
           </div>
         </div>
 
