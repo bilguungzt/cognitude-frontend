@@ -409,13 +409,43 @@ export interface EnhancedDashboardData {
     actuallySpent: number;
     totalSavings: number;
     projectedMonthlySavings: number;
+    showEmptyState: boolean;
+  };
+  systemStatus: {
+    overall: "healthy" | "warning" | "critical";
+    message: string;
+    providers: {
+      name: string;
+      status: "healthy" | "warning" | "critical";
+      latencyMs: number;
+      isActive: boolean;
+    }[];
+  };
+  requestStats: {
+    totalRequests: number;
+    cacheHitRate: number;
+    daysSinceSetup: number;
+  };
+  quickActions: {
+    label: string;
+    description: string;
+    href: string;
+  }[];
+  recommendation: {
+    title: string;
+    description: string;
+    actionLabel: string;
+    href: string;
+    badge?: string;
   };
   keyMetrics: {
     title: string;
-    value: string;
+    value: number;
     trend: string;
     sparklineData: number[];
-    color: "green" | "blue" | "red" | "purple" | "orange";
+    color: "green" | "blue" | "purple" | "orange";
+    prefix?: string;
+    suffix?: string;
   }[];
   bestOptimization: {
     originalModel: string;

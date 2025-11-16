@@ -16,18 +16,29 @@ const BestOptimizationCard: React.FC<BestOptimizationCardProps> = ({
   requestCount,
 }) => {
   return (
-    <div className="p-6 rounded-lg shadow-lg bg-gradient-to-br from-green-400 to-blue-500 text-white">
-      <h2 className="text-2xl font-bold mb-2">🏆 Best Save Today</h2>
-      <p className="text-lg mb-4">
-        Routed {originalModel} → {selectedModel}
-      </p>
-      <div className="text-right">
-        <p className="text-xl font-semibold">
-          Saved: ${savingsPerRequest.toFixed(4)} per request
+    <div className="p-6 rounded-2xl shadow-sm bg-gradient-to-br from-emerald-500 to-sky-500 text-white flex flex-col h-full">
+      <div>
+        <p className="text-sm uppercase tracking-wide text-white/80 mb-1">
+          Best Save Today
         </p>
-        <p className="text-md">
-          Total impact: ${totalImpact.toFixed(2)} ({requestCount} similar requests)
+        <h2 className="text-2xl font-bold mb-3">
+          Routed {originalModel} → {selectedModel}
+        </h2>
+        <p className="text-lg">
+          Saved <strong>${savingsPerRequest.toFixed(4)}</strong> per request
         </p>
+        <p className="text-sm text-white/80">
+          Total impact: ${totalImpact.toFixed(2)} ({requestCount} similar
+          requests)
+        </p>
+      </div>
+      <div className="mt-6 pt-4 border-t border-white/30">
+        <a
+          href="/autopilot"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-yellow-200 transition"
+        >
+          Review routing strategy →
+        </a>
       </div>
     </div>
   );
