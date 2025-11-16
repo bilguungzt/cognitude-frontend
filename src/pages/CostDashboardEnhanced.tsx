@@ -5,8 +5,6 @@ import type {
   UsageStats,
   DailyUsage,
   AutopilotSavingsBreakdown as AutopilotSavingsBreakdownType,
-  AutopilotSavings,
-  AutopilotModelRouting,
 } from "../types/api";
 import {
   BarChart,
@@ -18,9 +16,6 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   Calendar,
@@ -29,33 +24,11 @@ import {
   DollarSign,
   Download,
   RefreshCw,
-  PieChart as PieChartIcon,
-  ShieldCheck,
 } from "lucide-react";
 import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AutopilotSavingsBreakdown from "../components/AutopilotSavingsBreakdown";
-
-const DEFAULT_SAVINGS_BREAKDOWN = [
-  { label: "Smart Routing", amount: 450 },
-  { label: "Caching", amount: 350 },
-  { label: "Rate Optimization", amount: 200 },
-];
-
-const DEFAULT_ROUTING_SHARE = [
-  { model: "gpt-4o-mini", percentage: 62 },
-  { model: "claude-sonnet", percentage: 24 },
-  { model: "gpt-4o", percentage: 14 },
-];
-
-const ROUTING_COLORS = [
-  "#8b5cf6",
-  "#0ea5e9",
-  "#10b981",
-  "#f97316",
-  "#facc15",
-  "#ec4899",
-];
+import CostReconciliationCard from "../components/Dashboard/CostReconciliationCard";
 
 export default function CostDashboardEnhanced() {
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
@@ -108,38 +81,12 @@ export default function CostDashboardEnhanced() {
     enabled: isValidDateRange,
   });
 
-  const autopilotSavings = useApiQuery<AutopilotSavings>({
-    queryKey: ["autopilot-savings", dateRange.start, dateRange.end],
-    queryFn: () => api.getAutopilotSavings(),
-    zeroStateOn404: { cost_savings: 0, cache_hit_rate: 0 },
-    enabled: isValidDateRange,
-  });
-
-  const autopilotModelRouting = useApiQuery<AutopilotModelRouting>({
-    queryKey: ["autopilot-model-routing", dateRange.start, dateRange.end],
-    queryFn: () => api.getAutopilotModelRouting(),
-    zeroStateOn404: {},
-    enabled: isValidDateRange,
-  });
-
   const loading =
     isValidDateRange &&
-    (analyticsData.isLoading ||
-      autopilotSavingsBreakdown.isLoading ||
-      autopilotSavings.isLoading ||
-      autopilotModelRouting.isLoading);
+    (analyticsData.isLoading || autopilotSavingsBreakdown.isLoading);
   const error =
-    isValidDateRange &&
-    (analyticsData.error ||
-      autopilotSavingsBreakdown.error ||
-      autopilotSavings.error ||
-      autopilotModelRouting.error)
-      ? String(
-          analyticsData.error ||
-            autopilotSavingsBreakdown.error ||
-            autopilotSavings.error ||
-            autopilotModelRouting.error
-        )
+    isValidDateRange && (analyticsData.error || autopilotSavingsBreakdown.error)
+      ? String(analyticsData.error || autopilotSavingsBreakdown.error)
       : null;
   const autopilotBreakdownAvailable =
     autopilotSavingsBreakdown.data &&
@@ -548,31 +495,169 @@ export default function CostDashboardEnhanced() {
                   </div>
                 </div>
 
-                {/* Reconciliation / Autopilot Sections */}
-                <div className="mb-8">
-                  <CostReconciliationCard />
-                </div>
-
-                {autopilotUnavailable && (
-                  <div className="card mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Autopilot insights unavailable
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Autopilot analytics endpoints are not available in this
-                      environment yet. Once they are deployed, savings
-                      visualizations will appear here automatically.
-                    </p>
-                  </div>
-                )}
-
-                {autopilotSavingsBreakdown.data && !autopilotUnavailable && (
+                {/* Autopilot Insights Section */}
+                {autopilotBreakdownAvailable ? (
                   <div className="mb-8">
                     <AutopilotSavingsBreakdown
                       data={autopilotSavingsBreakdown.data}
                     />
                   </div>
+                ) : (
+                  <div className="card mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Autopilot Insights Coming Soon
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Autopilot will automatically optimize your LLM costs
+                          by intelligently routing requests to the most
+                          cost-effective models while maintaining quality.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-white rounded-lg p-4 border border-blue-100">
+                            <p className="text-xs text-gray-500 mb-1">
+                              Smart Routing
+                            </p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              Up to 60% savings
+                            </p>
+                          </div>
+                          <div className="bg-white rounded-lg p-4 border border-blue-100">
+                            <p className="text-xs text-gray-500 mb-1">
+                              Model Selection
+                            </p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              Automatic optimization
+                            </p>
+                          </div>
+                          <div className="bg-white rounded-lg p-4 border border-blue-100">
+                            <p className="text-xs text-gray-500 mb-1">
+                              Quality Maintained
+                            </p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              No degradation
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
+
+                {/* Provider Cost Breakdown */}
+                {analyticsData.data?.usage_by_provider &&
+                  analyticsData.data.usage_by_provider.length > 0 && (
+                    <div className="card mb-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                        Cost by Provider
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Provider
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Requests
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Cost
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Avg Latency
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {analyticsData.data.usage_by_provider.map(
+                              (provider, index) => (
+                                <tr
+                                  key={index}
+                                  className="hover:bg-gray-50 transition-colors"
+                                >
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">
+                                    {provider.provider}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                    {provider.requests.toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right font-medium">
+                                    {formatCurrency(provider.cost)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                    {provider.avg_latency_ms.toFixed(0)}ms
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Model Cost Breakdown */}
+                {analyticsData.data?.usage_by_model &&
+                  analyticsData.data.usage_by_model.length > 0 && (
+                    <div className="card mb-8">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                        Cost by Model
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Model
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Requests
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Cost
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Total Tokens
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {analyticsData.data.usage_by_model.map(
+                              (model, index) => (
+                                <tr
+                                  key={index}
+                                  className="hover:bg-gray-50 transition-colors"
+                                >
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {model.model}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                    {model.requests.toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right font-medium">
+                                    {formatCurrency(model.cost)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
+                                    {model.total_tokens.toLocaleString()}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Reconciliation Card */}
+                <div className="mb-8">
+                  <CostReconciliationCard />
+                </div>
 
                 {/* Usage Table */}
                 <div className="card">
